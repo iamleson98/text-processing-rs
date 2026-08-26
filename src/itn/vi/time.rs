@@ -7,6 +7,8 @@
 //! - "trưa" → "12:00"
 //! - "chín giờ linh năm" → "9:05"
 //! - "hai giờ chiều" → "14:00" (PM modifier)
+//! - "mười hai giờ đêm" → "0:00" (midnight, "đêm" = night)
+//! - "mười một giờ đêm" → "23:00" (11 PM)
 
 use super::cardinal::words_to_number;
 
@@ -22,8 +24,10 @@ pub fn parse(input: &str) -> Option<String> {
         return Some("12:00".to_string());
     }
 
-    // PM modifiers add 12 to the hour (1-11 PM → 13-23).
-    let (cleaned, add_12) = strip_time_modifiers(&input_lower);
+    // PM / night modifiers add 12 to the hour (1-11 PM → 13-23).
+    // "đêm" (night) is special: "12 giờ đêm" = midnight (0:00), "X giờ đêm"
+    // for X=1..11 = (X+12):00.
+    let (cleaned, add_12, is_night) = strip_time_modifiers(&input_lower);
 
     if cleaned.is_empty() {
         return None;
@@ -33,31 +37,45 @@ pub fn parse(input: &str) -> Option<String> {
     if let Some((hour_part, minute_part)) = cleaned.split_once(" giờ ") {
         let hour = words_to_number(hour_part)? as i64;
         let minute = words_to_number(minute_part)? as i64;
-        return format_hour_minute(hour, minute, add_12);
+        return format_hour_minute(hour, minute, add_12, is_night);
     }
 
     if let Some(hour_part) = cleaned.strip_suffix(" giờ") {
         let hour = words_to_number(hour_part)? as i64;
-        return format_hour_minute(hour, 0, add_12);
+        return format_hour_minute(hour, 0, add_12, is_night);
     }
 
     None
 }
 
-/// Strip Vietnamese time-of-day modifiers, returning the cleaned phrase and
-/// whether a PM modifier was present.
-fn strip_time_modifiers(input: &str) -> (String, bool) {
+/// Strip Vietnamese time-of-day modifiers, returning the cleaned phrase,
+/// whether a PM modifier was present, and whether the "đêm" (night) modifier
+/// was present (which maps 12 → 0).
+fn strip_time_modifiers(input: &str) -> (String, bool, bool) {
     // Order matters: longest phrases first.
-    let pm_markers = [" chiều", " tối", " buổi chiều", " buổi tối"];
-    let am_markers = [" sáng", " buổi sáng"];
+    let pm_markers = [" buổi chiều", " buổi tối", " chiều", " tối"];
+    let am_markers = [" buổi sáng", " sáng"];
+    let night_markers = [" đêm"];
 
     let mut cleaned = input.to_string();
     let mut add_12 = false;
-    for marker in &pm_markers {
+    let mut is_night = false;
+
+    for marker in &night_markers {
         if cleaned.ends_with(marker) {
             cleaned.truncate(cleaned.len() - marker.len());
+            is_night = true;
             add_12 = true;
             break;
+        }
+    }
+    if !is_night {
+        for marker in &pm_markers {
+            if cleaned.ends_with(marker) {
+                cleaned.truncate(cleaned.len() - marker.len());
+                add_12 = true;
+                break;
+            }
         }
     }
     if !add_12 {
@@ -68,16 +86,18 @@ fn strip_time_modifiers(input: &str) -> (String, bool) {
             }
         }
     }
-    (cleaned.trim().to_string(), add_12)
+    (cleaned.trim().to_string(), add_12, is_night)
 }
 
 /// Format hour:minute, applying the PM +12 offset and range-checking the result.
-fn format_hour_minute(hour: i64, minute: i64, add_12: bool) -> Option<String> {
+/// When `is_night` is true, hour 12 maps to 0 (midnight): "12 giờ đêm" → "0:00".
+fn format_hour_minute(hour: i64, minute: i64, add_12: bool, is_night: bool) -> Option<String> {
     let mut h = hour;
     if add_12 && h < 12 {
         h += 12;
     }
-    if h == 24 {
+    // "12 giờ đêm" = midnight (0:00), "12 giờ trưa" = noon (12:00).
+    if is_night && h == 12 {
         h = 0;
     }
     if !(0..=23).contains(&h) || !(0..=59).contains(&minute) {
@@ -110,8 +130,17 @@ mod tests {
     }
 
     #[test]
+    fn test_night_modifier() {
+        // "12 giờ đêm" = midnight (0:00), "11 giờ đêm" = 23:00.
+        assert_eq!(parse("mười hai giờ đêm"), Some("0:00".to_string()));
+        assert_eq!(parse("mười một giờ đêm"), Some("23:00".to_string()));
+        assert_eq!(parse("mười giờ đêm"), Some("22:00".to_string()));
+    }
+
+    #[test]
     fn test_invalid() {
         assert_eq!(parse("hai mươi lăm giờ"), None); // > 23
+        assert_eq!(parse("hai mươi bốn giờ"), None); // 24:00 rejected
         assert_eq!(parse("hello"), None);
         assert_eq!(parse(""), None);
     }

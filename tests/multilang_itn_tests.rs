@@ -93,6 +93,43 @@ fn test_vi_sentence_passthrough() {
     );
 }
 
+#[test]
+fn test_vi_sentence_money() {
+    // Money expression inside a sentence.
+    assert_eq!(
+        normalize_sentence_lang("giá là năm nghìn đồng", "vi"),
+        "giá là 5000 ₫"
+    );
+}
+
+#[test]
+fn test_vi_sentence_time() {
+    // Time expression inside a sentence.
+    assert_eq!(
+        normalize_sentence_lang("hẹn gặp lúc hai giờ chiều", "vi"),
+        "hẹn gặp lúc 14:00"
+    );
+}
+
+#[test]
+fn test_vi_sentence_mixed_types() {
+    // Multiple expression types in one sentence.
+    assert_eq!(
+        normalize_sentence_lang("tôi có hai mươi mốt quả táo và năm nghìn đồng", "vi"),
+        "tôi có 21 quả táo và 5000 ₫"
+    );
+}
+
+#[test]
+fn test_vi_sentence_with_punctuation() {
+    // Trailing punctuation is preserved and glued (Vietnamese does not add a
+    // space before terminal punctuation).
+    assert_eq!(
+        normalize_sentence_lang("tôi có hai mươi mốt quả táo!", "vi"),
+        "tôi có 21 quả táo!"
+    );
+}
+
 // ── Chinese (whole-sentence scanning) ────────────────────────────────
 
 #[test]

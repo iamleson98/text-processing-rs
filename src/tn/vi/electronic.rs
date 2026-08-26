@@ -34,12 +34,55 @@ fn spell_char(c: char) -> String {
 }
 
 /// True when the input looks like an email, URL, or other electronic address.
+///
+/// A bare `.` or `/` is NOT enough — those appear in decimal numbers ("3.14")
+/// and dates ("5/1/2025"). We require an unambiguous electronic marker: `@`,
+/// `://`, `www.`, or a dot/slash combined with at least one alphabetic character
+/// on each side (so `test.com` matches but `3.14` does not).
 fn looks_electronic(input: &str) -> bool {
-    input.contains('@')
-        || input.contains("://")
-        || (input.contains("www.") && input.contains('.'))
-        || input.contains('.')
-        || input.contains('/')
+    if input.contains('@') || input.contains("://") || input.contains("www.") {
+        return true;
+    }
+    // "word.word" pattern (e.g. "example.com", "test.org") — but NOT "3.14"
+    // or "1.000". Require at least one alpha on each side of a dot.
+    if input.contains('.') && has_alpha_dot_alpha(input) {
+        return true;
+    }
+    // "word/word" pattern (e.g. "example/path") — but NOT "5/1/2025".
+    if input.contains('/') && has_alpha_slash_alpha(input) {
+        return true;
+    }
+    false
+}
+
+/// True if the input contains a dot with at least one alphabetic character on
+/// each side (e.g. "test.com" → true, "3.14" → false, "1.000" → false).
+fn has_alpha_dot_alpha(input: &str) -> bool {
+    let bytes = input.as_bytes();
+    for i in 1..bytes.len().saturating_sub(1) {
+        if bytes[i] == b'.'
+            && bytes[i - 1].is_ascii_alphabetic()
+            && bytes[i + 1].is_ascii_alphabetic()
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// True if the input contains a slash with at least one alphabetic character on
+/// each side (e.g. "example/path" → true, "5/1/2025" → false).
+fn has_alpha_slash_alpha(input: &str) -> bool {
+    let bytes = input.as_bytes();
+    for i in 1..bytes.len().saturating_sub(1) {
+        if bytes[i] == b'/'
+            && bytes[i - 1].is_ascii_alphabetic()
+            && bytes[i + 1].is_ascii_alphabetic()
+        {
+            return true;
+        }
+    }
+    false
 }
 
 /// Parse an electronic address into spoken Vietnamese.
@@ -85,5 +128,16 @@ mod tests {
     fn test_invalid() {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse(""), None);
+    }
+
+    #[test]
+    fn test_not_hijacking_decimals_and_dates() {
+        // Pure decimals and dates must NOT be matched by electronic — the
+        // decimal and date taggers own these patterns.
+        assert_eq!(parse("3.14"), None);
+        assert_eq!(parse("-3.14"), None);
+        assert_eq!(parse("1.000"), None);
+        assert_eq!(parse("5/1/2025"), None);
+        assert_eq!(parse("14/7"), None);
     }
 }

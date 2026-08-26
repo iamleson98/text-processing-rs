@@ -202,15 +202,26 @@ const UNITS: &[Unit] = &[
 ];
 
 /// Parse a spoken Vietnamese measurement expression to written form.
+///
+/// Handles optional leading "âm" (negative) for temperatures and other
+/// signed measurements: "âm mười độ xê" → "-10 °C".
 pub fn parse(input: &str) -> Option<String> {
     let input_lower = input.trim().to_lowercase();
+
+    // Strip optional leading "âm" (negative).
+    let (is_negative, body) = if let Some(rest) = input_lower.strip_prefix("âm ") {
+        (true, rest)
+    } else {
+        (false, input_lower.as_str())
+    };
 
     for unit in UNITS {
         for &word in unit.words {
             let suffix = format!(" {}", word);
-            if let Some(num_part) = input_lower.strip_suffix(&suffix) {
+            if let Some(num_part) = body.strip_suffix(&suffix) {
                 if let Some(num) = words_to_number(num_part) {
-                    return Some(format!("{} {}", num, unit.symbol));
+                    let sign = if is_negative { "-" } else { "" };
+                    return Some(format!("{}{} {}", sign, num, unit.symbol));
                 }
             }
         }
@@ -249,6 +260,8 @@ mod tests {
     fn test_temperature() {
         assert_eq!(parse("hai mươi lăm độ xê"), Some("25 °C".to_string()));
         assert_eq!(parse("một trăm độ"), Some("100 °".to_string()));
+        // Negative temperature: "âm mười độ xê" → "-10 °C".
+        assert_eq!(parse("âm mười độ xê"), Some("-10 °C".to_string()));
     }
 
     #[test]

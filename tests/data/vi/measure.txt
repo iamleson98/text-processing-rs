@@ -1,13 +1,24 @@
 # Vietnamese ITN measure test cases (spoken → written).
+
+# === Length ===
 hai trăm ki lô mét~200 km
 năm mét~5 m
 mười xăng ti mét~10 cm
+
+# === Rate (compound) ===
 hai trăm ki lô mét trên giờ~200 km/h
 năm mét trên giây~5 m/s
+
+# === Weight ===
 năm mươi ki lô gam~50 kg
 chín mươi gam~90 g
+một nghìn ki lô gam~1000 kg
+
+# === Temperature (including negative) ===
 hai mươi lăm độ xê~25 °C
+âm mười độ xê~-10 °C
 một trăm độ~100 °
+
+# === Volume / area ===
 hai mét khối~2 m³
 năm mét vuông~5 m²
-một nghìn ki lô gam~1000 kg

@@ -1,11 +1,17 @@
 # Vietnamese ITN ordinal test cases (spoken → written).
+
+# === Small ordinals 1-4 (unique words) ===
 thứ nhất~1
 thứ hai~2
 thứ ba~3
 thứ tư~4
+
+# === Compound ordinals 5+ (cardinal form) ===
 thứ năm~5
 thứ mười~10
 thứ mười lăm~15
 thứ hai mươi mốt~21
 thứ hai mươi lăm~25
+
+# === Large ordinals ===
 thứ một trăm~100

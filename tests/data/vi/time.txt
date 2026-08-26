@@ -1,11 +1,28 @@
 # Vietnamese ITN time test cases (spoken → written).
+
+# === Basic 24-hour ===
 mười bốn giờ ba mươi~14:30
 tám giờ~8:00
 chín giờ linh năm~9:05
+sáu giờ ba mươi~6:30
+mười một giờ bốn mươi lăm~11:45
+
+# === Midnight / noon ===
 nửa đêm~0:00
 trưa~12:00
+
+# === PM modifiers (chiều / tối) ===
 hai giờ chiều~14:00
 ba giờ tối~15:00
-mười một giờ bốn mươi lăm~11:45
+một giờ chiều~13:00
+
+# === Night modifier (đêm) — 12 giờ đêm = midnight, X giờ đêm = (X+12) ===
+mười hai giờ đêm~0:00
+mười một giờ đêm~23:00
+mười giờ đêm~22:00
+
+# === Whole hour ===
 hai mươi ba giờ không~23:00
-sáu giờ ba mươi~6:30
+
+# === Single-digit minute with linh ===
+chín giờ linh năm~9:05

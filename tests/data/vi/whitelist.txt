@@ -1,4 +1,6 @@
 # Vietnamese ITN whitelist test cases (spoken → written).
+
+# === Academic / professional titles ===
 tiến sĩ~TS.
 giáo sư~GS.
 kỹ sư~KS.
@@ -6,6 +8,8 @@ thạc sĩ~ThS.
 bác sĩ~BS.
 cử nhân~CN.
 phó giáo sư~PGS.
+
+# === Educational institutions ===
 đại học~ĐH
 trung học phổ thông~THPT
 ủy ban nhân dân~UBND

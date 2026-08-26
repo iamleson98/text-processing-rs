@@ -1,4 +1,11 @@
 # Vietnamese ITN telephone test cases (spoken → written).
+# Each digit is spelled individually.
+
+# === 10-digit mobile ===
 không chín không một hai ba bốn năm sáu bảy~0901234567
 không chín ba bốn năm sáu bảy tám chín không~0934567890
 không một hai ba bốn năm sáu bảy tám chín~0123456789
+
+# === With positional variants (mốt, lăm, tư) ===
+không một mốt hai ba bốn lăm sáu bảy tám~0112345678
+không tư năm sáu bảy tám chín không một hai~0456789012

@@ -3,31 +3,64 @@
 # Note: single-scale expressions like "một triệu" / "một tỷ" are preserved by
 # the decimal tagger ("1 triệu" / "1 tỷ"). Only compound multi-scale expressions
 # (e.g. "hai tỷ ba triệu bốn nghìn năm") are folded to digits by the cardinal.
+
+# === Basic 0-19 ===
 mười~10
 mười một~11
 mười lăm~15
 mười chín~19
+
+# === Tens 20-99 (mốt/lăm positional variants) ===
 hai mươi~20
 hai mươi mốt~21
 hai mươi lăm~25
+hai mươi chín~29
 ba mươi~30
+ba mươi mốt~31
 bốn mươi hai~42
 chín mươi chín~99
+
+# === Hundreds 100-999 (linh linker, lẻ variant) ===
 một trăm~100
 một trăm linh năm~105
 một trăm lẻ năm~105
 một trăm hai mươi ba~123
 hai trăm~200
 chín trăm chín mươi chín~999
+một trăm linh không~100
+chín trăm linh chín~909
+
+# === Thousands (nghìn Northern, ngàn Southern) ===
 một nghìn~1000
 hai nghìn~2000
 một ngàn~1000
+hai ngàn~2000
 hai nghìn không trăm hai mươi lăm~2025
+hai ngàn không trăm hai mươi lăm~2025
 một nghìn không trăm linh năm~1005
 mười nghìn~10000
 hai mươi nghìn~20000
 một trăm nghìn~100000
+chín trăm chín mươi chín nghìn~999000
+
+# === Millions and billions (single-scale preserved by decimal tagger) ===
+một trăm triệu~100 triệu
+hai tỷ~2 tỷ
+
+# === Composed scales (10^12, 10^15, 10^18) ===
+một tỷ tỷ~1000000000000000000
+hai nghìn tỷ~2000000000000
+
+# === Multi-scale compound (folded to digits) ===
 hai tỷ ba triệu bốn nghìn năm~2003004005
+một trăm hai mươi ba tỷ bốn mươi lăm triệu~123045000000
+
+# === Negative ===
 âm bốn mươi hai~-42
 âm một~-1
 âm một nghìn~-1000
+âm một trăm~-100
+
+# === Bằng/chín variants (bẩy = older spelling for 7) ===
+bảy mươi~70
+bẩy mươi~70

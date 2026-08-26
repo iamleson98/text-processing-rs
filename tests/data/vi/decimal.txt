@@ -1,11 +1,33 @@
 # Vietnamese ITN decimal test cases (spoken → written).
+
+# === Basic decimals ===
 ba phẩy một bốn~3.14
 không phẩy năm~0.5
 không phẩy hai sáu~0.26
-âm ba phẩy một bốn~-3.14
 một phẩy không~1.0
 mười phẩy năm~10.5
-một trăm phẩy không năm~100.05
+
+# === No integer part ===
+phẩy năm~.5
+phẩy không hai~.02
+
+# === Negative decimals ===
+âm ba phẩy một bốn~-3.14
+âm không phẩy năm~-0.5
+
+# === Scale-preserved decimals (tỷ / triệu preserved; nghìn folded to cardinal) ===
 một phẩy năm tỷ~1.5 tỷ
+hai phẩy ba triệu~2.3 triệu
 hai mươi tỷ~20 tỷ
+
+# === Composed scale NOT hijacked by decimal (cardinal handles it) ===
+một tỷ tỷ~1000000000000000000
+
+# === Long fractional part ===
 một phẩy hai ba bốn năm sáu~1.23456
+
+# === Zero integer + zero decimal ===
+không phẩy không~0.0
+
+# === Hundreds integer part ===
+một trăm phẩy không năm~100.05

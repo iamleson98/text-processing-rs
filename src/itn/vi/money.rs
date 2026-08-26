@@ -69,18 +69,62 @@ pub fn parse(input: &str) -> Option<String> {
     None
 }
 
-/// Parse the numeric portion of a money expression (handles bare amounts and
-/// scale-prefixed forms like "một tỷ").
+/// Parse the numeric portion of a money expression.
+///
+/// Handles:
+/// - Bare amounts: "năm nghìn" → "5000"
+/// - Scale-prefixed: "một tỷ" → "1000000000"
+/// - Decimal amounts: "năm phẩy hai" → "5.2"
+/// - Decimal + scale: "một phẩy năm triệu" → "1500000"
 fn parse_money_number(input: &str) -> Option<String> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return None;
     }
 
-    // "một tỷ", "hai triệu", etc. — the scale word is part of the amount.
     let lower = trimmed.to_lowercase();
+
+    // Decimal amount: "năm phẩy hai" → "5.2", "một phẩy năm triệu" → "1500000".
+    if lower.contains("phẩy") {
+        // Try decimal + scale: "một phẩy năm triệu" → 1.5 * 1_000_000 = 1500000.
+        if let Some(result) = parse_decimal_with_scale(&lower) {
+            return Some(result);
+        }
+        // Plain decimal: "năm phẩy hai" → "5.2".
+        return super::decimal::parse(&lower);
+    }
+
+    // "một tỷ", "hai triệu", etc. — the scale word is part of the amount.
     if let Some(n) = words_to_number(&lower) {
         return Some(n.to_string());
+    }
+
+    None
+}
+
+/// Parse a decimal amount followed by a scale word.
+/// "một phẩy năm triệu" → 1.5 × 1_000_000 = "1500000".
+fn parse_decimal_with_scale(input: &str) -> Option<String> {
+    const SCALES: &[(&str, i128)] = &[
+        ("tỷ", 1_000_000_000),
+        ("triệu", 1_000_000),
+        ("nghìn", 1_000),
+        ("ngàn", 1_000),
+    ];
+
+    for &(scale_word, scale_val) in SCALES {
+        if input.ends_with(scale_word) {
+            let num_part = input.strip_suffix(scale_word)?.trim();
+            if num_part.contains("phẩy") {
+                let decimal_str = super::decimal::parse(num_part)?;
+                // Parse the decimal string back to f64, multiply by scale,
+                // and format as integer (Vietnamese money doesn't use
+                // fractional scale suffixes in written form).
+                let val: f64 = decimal_str.parse().ok()?;
+                let result = (val * scale_val as f64).round() as i128;
+                return Some(result.to_string());
+            }
+        }
     }
 
     None
@@ -118,6 +162,15 @@ mod tests {
         assert_eq!(parse("năm mươi bảng"), Some("50 £".to_string()));
         assert_eq!(parse("một trăm yên"), Some("100 ¥".to_string()));
         assert_eq!(parse("một nghìn tệ"), Some("1000 ¥".to_string()));
+    }
+
+    #[test]
+    fn test_decimal_amounts() {
+        assert_eq!(parse("năm phẩy hai đô la"), Some("5.2 $".to_string()));
+        assert_eq!(
+            parse("một phẩy năm triệu đồng"),
+            Some("1500000 ₫".to_string())
+        );
     }
 
     #[test]

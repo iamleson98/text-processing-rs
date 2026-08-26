@@ -37,10 +37,20 @@ pub fn parse(input: &str) -> Option<String> {
 }
 
 /// Parse numbers ending in a preserved scale word (tỷ / triệu).
+///
+/// Skips multi-scale compounds like "ba tỷ bốn mươi lăm triệu" — if the number
+/// part itself contains a scale word (tỷ/triệu/nghìn/ngàn), the cardinal tagger
+/// should fold the whole expression to digits, not the decimal tagger.
 fn parse_with_scale(original: &str, input_lower: &str) -> Option<String> {
     for &scale in PRESERVED_SCALES {
         if let Some(num_part) = input_lower.strip_suffix(scale) {
             let num_part = num_part.trim();
+            // If the number part contains a scale word (e.g. "một tỷ" in
+            // "một tỷ tỷ", or "ba tỷ bốn mươi lăm" in "ba tỷ bốn mươi lăm
+            // triệu"), this is a multi-scale compound — defer to cardinal.
+            if contains_scale_word(num_part) {
+                continue;
+            }
             // Preserve the original-case scale word for the output.
             let orig_scale = &original[original.len() - scale.len()..];
 
@@ -56,6 +66,14 @@ fn parse_with_scale(original: &str, input_lower: &str) -> Option<String> {
     }
 
     None
+}
+
+/// True if the input contains any Vietnamese scale word (tỷ / triệu / nghìn / ngàn).
+/// Used to detect multi-scale compounds that should be handled by the cardinal
+/// tagger, not the decimal tagger.
+fn contains_scale_word(input: &str) -> bool {
+    const SCALES: &[&str] = &["tỷ", "triệu", "nghìn", "ngàn"];
+    input.split_whitespace().any(|t| SCALES.contains(&t))
 }
 
 /// Parse "X phẩy Y" decimal pattern.
@@ -164,6 +182,19 @@ mod tests {
     fn test_with_scale() {
         assert_eq!(parse("một phẩy năm tỷ"), Some("1.5 tỷ".to_string()));
         assert_eq!(parse("hai mươi tỷ"), Some("20 tỷ".to_string()));
+    }
+
+    #[test]
+    fn test_no_integer_part() {
+        assert_eq!(parse("phẩy năm"), Some(".5".to_string()));
+        assert_eq!(parse("phẩy không hai"), Some(".02".to_string()));
+    }
+
+    #[test]
+    fn test_composed_scale_not_hijacked() {
+        // "tỷ tỷ" (10^18) is a composed scale — cardinal handles it, not decimal.
+        // Decimal should return None so cardinal can fold it to digits.
+        assert_eq!(parse("một tỷ tỷ"), None);
     }
 
     #[test]

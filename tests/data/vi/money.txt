@@ -1,11 +1,21 @@
 # Vietnamese ITN money test cases (spoken → written).
+
+# === Đồng (VND) ===
 năm nghìn đồng~5000 ₫
 một trăm đồng~100 ₫
 mười triệu đồng~10000000 ₫
-năm đô la~5 $
-mười đô~10 $
 một tỷ đồng~1000000000 ₫
 hai mươi tỷ năm mươi triệu đồng~20050000000 ₫
+
+# === Dollar ===
+năm đô la~5 $
+mười đô~10 $
+
+# === Decimal amounts ===
+năm phẩy hai đô la~5.2 $
+một phẩy năm triệu đồng~1500000 ₫
+
+# === Other currencies ===
 mười ơ rô~10 €
 năm mươi bảng~50 £
 một trăm yên~100 ¥
