@@ -16,7 +16,7 @@ cargo clippy --all-targets       # Lint
 
 ## Architecture
 
-- **src/itn/**: ITN taggers (spoken → written, Inverse Text Normalization) per language (en, de, es, fr, hi, ja, zh)
+- **src/itn/**: ITN taggers (spoken → written, Inverse Text Normalization) per language (en, de, es, fr, hi, ja, vi, zh)
 - **src/tn/**: TN taggers (written → spoken, Text Normalization)
 - **src/custom_rules.rs**: User-defined custom normalization rules (highest priority)
 - **src/ffi.rs**: C FFI bindings for Swift/Python integration (gated by `ffi` feature)

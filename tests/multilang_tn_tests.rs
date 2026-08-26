@@ -194,12 +194,50 @@ fn test_ja_sentence() {
     );
 }
 
+// ── Vietnamese ───────────────────────────────────────────────────────
+
+#[test]
+fn test_vi_cardinal() {
+    assert_eq!(tn_normalize_lang("123", "vi"), "một trăm hai mươi ba");
+    assert_eq!(tn_normalize_lang("0", "vi"), "không");
+    assert_eq!(tn_normalize_lang("15", "vi"), "mười lăm");
+    assert_eq!(tn_normalize_lang("21", "vi"), "hai mươi mốt");
+    assert_eq!(tn_normalize_lang("25", "vi"), "hai mươi lăm");
+    assert_eq!(tn_normalize_lang("1000", "vi"), "một nghìn");
+    assert_eq!(
+        tn_normalize_lang("2025", "vi"),
+        "hai nghìn không trăm hai mươi lăm"
+    );
+    assert_eq!(tn_normalize_lang("1000000000", "vi"), "một tỷ");
+}
+
+#[test]
+fn test_vi_money() {
+    assert_eq!(tn_normalize_lang("₫5000", "vi"), "năm nghìn đồng");
+    assert_eq!(tn_normalize_lang("$5", "vi"), "năm đô la");
+}
+
+#[test]
+fn test_vi_time() {
+    assert_eq!(tn_normalize_lang("14:30", "vi"), "mười bốn giờ ba mươi");
+    assert_eq!(tn_normalize_lang("0:00", "vi"), "nửa đêm");
+    assert_eq!(tn_normalize_lang("12:00", "vi"), "trưa");
+}
+
+#[test]
+fn test_vi_sentence() {
+    assert_eq!(
+        tn_normalize_sentence_lang("Tôi có 123 quả táo", "vi"),
+        "Tôi có một trăm hai mươi ba quả táo"
+    );
+}
+
 // ── Cross-language dispatch ──────────────────────────────────────────
 
 #[test]
 fn test_same_input_different_languages() {
     // "123" should produce different output per language
-    let results: Vec<(&str, String)> = ["en", "fr", "es", "de", "zh", "hi", "ja"]
+    let results: Vec<(&str, String)> = ["en", "fr", "es", "de", "zh", "hi", "ja", "vi"]
         .iter()
         .map(|lang| (*lang, tn_normalize_lang("123", lang)))
         .collect();
@@ -211,6 +249,7 @@ fn test_same_input_different_languages() {
     assert_eq!(results[4].1, "yi bai er shi san"); // zh
     assert_eq!(results[5].1, "ek sau teis"); // hi
     assert_eq!(results[6].1, "hyaku ni juu san"); // ja
+    assert_eq!(results[7].1, "một trăm hai mươi ba"); // vi
 }
 
 #[test]
@@ -225,7 +264,7 @@ fn test_unknown_lang_falls_back_to_english() {
 #[test]
 fn test_sentence_lang_passthrough() {
     // Non-normalizable text should pass through unchanged for all languages
-    for lang in &["fr", "es", "de", "zh", "hi", "ja"] {
+    for lang in &["fr", "es", "de", "zh", "hi", "ja", "vi"] {
         assert_eq!(
             tn_normalize_sentence_lang("hello world", lang),
             "hello world",
@@ -237,7 +276,7 @@ fn test_sentence_lang_passthrough() {
 
 #[test]
 fn test_sentence_lang_empty() {
-    for lang in &["fr", "es", "de", "zh", "hi", "ja"] {
+    for lang in &["fr", "es", "de", "zh", "hi", "ja", "vi"] {
         assert_eq!(
             tn_normalize_sentence_lang("", lang),
             "",

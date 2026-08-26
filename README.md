@@ -117,9 +117,13 @@ use text_processing_rs::{normalize_sentence, normalize_sentence_lang, tn_normali
 let result = normalize_sentence("I have twenty one apples");
 assert_eq!(result, "I have 21 apples");
 
-// ITN sentence mode, language-aware ("en", "fr", "es", "de", "zh", "hi", "ja")
+// ITN sentence mode, language-aware ("en", "fr", "es", "de", "zh", "hi", "ja", "vi")
 let result = normalize_sentence_lang("j'ai vingt et un ans", "fr");
 assert_eq!(result, "j'ai 21 ans");
+
+// Vietnamese ITN
+let result = normalize_with_lang("hai mươi mốt", "vi");
+assert_eq!(result, "21");
 
 // TN sentence mode
 let result = tn_normalize_sentence("I paid $5 for 23 items");
@@ -143,7 +147,7 @@ let spoken = NemoTextProcessing.tnNormalize("$5.50")
 let itn = NemoTextProcessing.normalizeSentence("I have twenty one apples")
 // "I have 21 apples"
 
-// Language-aware ITN sentence mode ("en", "fr", "es", "de", "zh", "hi", "ja")
+// Language-aware ITN sentence mode ("en", "fr", "es", "de", "zh", "hi", "ja", "vi")
 let itnFr = NemoTextProcessing.normalizeSentence("j'ai vingt et un ans", language: "fr")
 // "j'ai 21 ans"
 

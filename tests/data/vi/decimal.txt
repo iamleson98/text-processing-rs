@@ -1,0 +1,11 @@
+# Vietnamese ITN decimal test cases (spoken → written).
+ba phẩy một bốn~3.14
+không phẩy năm~0.5
+không phẩy hai sáu~0.26
+âm ba phẩy một bốn~-3.14
+một phẩy không~1.0
+mười phẩy năm~10.5
+một trăm phẩy không năm~100.05
+một phẩy năm tỷ~1.5 tỷ
+hai mươi tỷ~20 tỷ
+một phẩy hai ba bốn năm sáu~1.23456

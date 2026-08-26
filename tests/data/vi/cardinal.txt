@@ -1,0 +1,33 @@
+# Vietnamese ITN cardinal test cases (spoken → written).
+# Each line: spoken_form~written_form
+# Note: single-scale expressions like "một triệu" / "một tỷ" are preserved by
+# the decimal tagger ("1 triệu" / "1 tỷ"). Only compound multi-scale expressions
+# (e.g. "hai tỷ ba triệu bốn nghìn năm") are folded to digits by the cardinal.
+mười~10
+mười một~11
+mười lăm~15
+mười chín~19
+hai mươi~20
+hai mươi mốt~21
+hai mươi lăm~25
+ba mươi~30
+bốn mươi hai~42
+chín mươi chín~99
+một trăm~100
+một trăm linh năm~105
+một trăm lẻ năm~105
+một trăm hai mươi ba~123
+hai trăm~200
+chín trăm chín mươi chín~999
+một nghìn~1000
+hai nghìn~2000
+một ngàn~1000
+hai nghìn không trăm hai mươi lăm~2025
+một nghìn không trăm linh năm~1005
+mười nghìn~10000
+hai mươi nghìn~20000
+một trăm nghìn~100000
+hai tỷ ba triệu bốn nghìn năm~2003004005
+âm bốn mươi hai~-42
+âm một~-1
+âm một nghìn~-1000

@@ -1,0 +1,10 @@
+# Vietnamese ITN date test cases (spoken → written).
+năm tháng một hai nghìn không trăm hai mươi lăm~5/1/2025
+mười bốn tháng bảy~14/7
+mùng một tháng một~1/1
+ngày mười tháng mười~10/10
+mười bốn tháng bảy năm hai nghìn mười ba~14/7/2013
+mười một tháng mười hai~11/12
+một tháng một hai nghìn~1/1/2000
+ba mươi mốt tháng mười hai~31/12
+hai mươi chín tháng hai hai nghìn hai mươi tư~29/2/2024

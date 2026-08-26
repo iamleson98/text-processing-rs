@@ -14,4 +14,5 @@ pub mod es;
 pub mod fr;
 pub mod hi;
 pub mod ja;
+pub mod vi;
 pub mod zh;

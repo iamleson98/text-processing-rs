@@ -1,0 +1,118 @@
+//! Time tagger for Vietnamese.
+//!
+//! Converts spoken Vietnamese time expressions to written form:
+//! - "mười bốn giờ ba mươi" → "14:30"
+//! - "tám giờ" → "8:00"
+//! - "nửa đêm" → "0:00"
+//! - "trưa" → "12:00"
+//! - "chín giờ linh năm" → "9:05"
+//! - "hai giờ chiều" → "14:00" (PM modifier)
+
+use super::cardinal::words_to_number;
+
+/// Parse a spoken Vietnamese time expression to written form `HH:MM` (24-hour).
+pub fn parse(input: &str) -> Option<String> {
+    let input_lower = input.trim().to_lowercase();
+
+    // Special base times.
+    if input_lower == "nửa đêm" || input_lower == "đêm khuya" {
+        return Some("0:00".to_string());
+    }
+    if input_lower == "trưa" || input_lower == "giữa trưa" {
+        return Some("12:00".to_string());
+    }
+
+    // PM modifiers add 12 to the hour (1-11 PM → 13-23).
+    let (cleaned, add_12) = strip_time_modifiers(&input_lower);
+
+    if cleaned.is_empty() {
+        return None;
+    }
+
+    // "X giờ Y" or "X giờ" patterns.
+    if let Some((hour_part, minute_part)) = cleaned.split_once(" giờ ") {
+        let hour = words_to_number(hour_part)? as i64;
+        let minute = words_to_number(minute_part)? as i64;
+        return format_hour_minute(hour, minute, add_12);
+    }
+
+    if let Some(hour_part) = cleaned.strip_suffix(" giờ") {
+        let hour = words_to_number(hour_part)? as i64;
+        return format_hour_minute(hour, 0, add_12);
+    }
+
+    None
+}
+
+/// Strip Vietnamese time-of-day modifiers, returning the cleaned phrase and
+/// whether a PM modifier was present.
+fn strip_time_modifiers(input: &str) -> (String, bool) {
+    // Order matters: longest phrases first.
+    let pm_markers = [" chiều", " tối", " buổi chiều", " buổi tối"];
+    let am_markers = [" sáng", " buổi sáng"];
+
+    let mut cleaned = input.to_string();
+    let mut add_12 = false;
+    for marker in &pm_markers {
+        if cleaned.ends_with(marker) {
+            cleaned.truncate(cleaned.len() - marker.len());
+            add_12 = true;
+            break;
+        }
+    }
+    if !add_12 {
+        for marker in &am_markers {
+            if cleaned.ends_with(marker) {
+                cleaned.truncate(cleaned.len() - marker.len());
+                break;
+            }
+        }
+    }
+    (cleaned.trim().to_string(), add_12)
+}
+
+/// Format hour:minute, applying the PM +12 offset and range-checking the result.
+fn format_hour_minute(hour: i64, minute: i64, add_12: bool) -> Option<String> {
+    let mut h = hour;
+    if add_12 && h < 12 {
+        h += 12;
+    }
+    if h == 24 {
+        h = 0;
+    }
+    if !(0..=23).contains(&h) || !(0..=59).contains(&minute) {
+        return None;
+    }
+    Some(format!("{}:{:02}", h, minute))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic() {
+        assert_eq!(parse("mười bốn giờ ba mươi"), Some("14:30".to_string()));
+        assert_eq!(parse("tám giờ"), Some("8:00".to_string()));
+        assert_eq!(parse("chín giờ linh năm"), Some("9:05".to_string()));
+    }
+
+    #[test]
+    fn test_special() {
+        assert_eq!(parse("nửa đêm"), Some("0:00".to_string()));
+        assert_eq!(parse("trưa"), Some("12:00".to_string()));
+    }
+
+    #[test]
+    fn test_pm_modifier() {
+        assert_eq!(parse("hai giờ chiều"), Some("14:00".to_string()));
+        assert_eq!(parse("ba giờ tối"), Some("15:00".to_string()));
+    }
+
+    #[test]
+    fn test_invalid() {
+        assert_eq!(parse("hai mươi lăm giờ"), None); // > 23
+        assert_eq!(parse("hello"), None);
+        assert_eq!(parse(""), None);
+    }
+}

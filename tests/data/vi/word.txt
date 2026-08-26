@@ -1,0 +1,5 @@
+# Vietnamese ITN word (spelled-letter sequence) test cases (spoken → written).
+a bê xê~ABC
+u ét a~USA
+a bê~AB
+e mờ~EM

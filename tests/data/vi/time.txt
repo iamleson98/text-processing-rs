@@ -1,0 +1,11 @@
+# Vietnamese ITN time test cases (spoken → written).
+mười bốn giờ ba mươi~14:30
+tám giờ~8:00
+chín giờ linh năm~9:05
+nửa đêm~0:00
+trưa~12:00
+hai giờ chiều~14:00
+ba giờ tối~15:00
+mười một giờ bốn mươi lăm~11:45
+hai mươi ba giờ không~23:00
+sáu giờ ba mươi~6:30

@@ -1,0 +1,10 @@
+# Vietnamese ITN fraction test cases (spoken → written).
+một phần ba~1/3
+một phần bốn~1/4
+hai phần chín~2/9
+một phần năm~1/5
+một phần mười~1/10
+nửa~1/2
+một rưỡi~1 1/2
+hai rưỡi~2 1/2
+một phần một trăm~1/100

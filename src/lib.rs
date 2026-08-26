@@ -191,7 +191,8 @@ pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String 
 /// ASR output to written form in different languages.
 ///
 /// Supported languages: "en" (default), "fr" (French), "de" (German),
-/// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "zh" (Chinese).
+/// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "zh" (Chinese),
+/// "vi" (Vietnamese).
 pub fn normalize_with_lang(input: &str, lang: &str) -> String {
     let input = input.trim();
 
@@ -203,6 +204,7 @@ pub fn normalize_with_lang(input: &str, lang: &str) -> String {
         "hi" => normalize_lang_hi(input),
         "ja" => normalize_lang_ja(input),
         "zh" => normalize_lang_zh(input),
+        "vi" => normalize_lang_vi(input),
         _ => normalize(input), // Default to English
     }
 }
@@ -453,6 +455,103 @@ fn try_es_taggers(input: &str) -> Option<String> {
     None
 }
 
+// ── Vietnamese ITN ──────────────────────────────────────────────────────
+
+/// ITN for Vietnamese.
+///
+/// Vietnamese is space-delimited (like fr/de/es), so it uses the
+/// expression-level tagger architecture: the whole input is tried first, then
+/// trailing punctuation is stripped and tried, then a partial-cardinal fallback
+/// handles two-token phrases like "hai mươi tuổi" → "20 tuổi".
+fn normalize_lang_vi(input: &str) -> String {
+    // Try full input first.
+    if let Some(result) = try_vi_taggers(input) {
+        return result;
+    }
+
+    // Try stripping trailing punctuation: "hai mươi!" → "20 !".
+    if let Some((text, punct)) = strip_trailing_punctuation(input) {
+        if let Some(result) = try_vi_taggers(text) {
+            return format!("{} {}", result, punct);
+        }
+    }
+
+    // Try partial number normalization: "hai mươi tuổi" → "20 tuổi".
+    if let Some(result) = try_vi_partial_cardinal(input) {
+        return result;
+    }
+
+    input.to_string()
+}
+
+/// Try all Vietnamese ITN taggers on the input, in priority order.
+fn try_vi_taggers(input: &str) -> Option<String> {
+    if let Some(result) = custom_rules::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::whitelist::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::punctuation::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::word::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::time::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::date::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::money::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::measure::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::electronic::parse(input) {
+        return Some(result);
+    }
+    // Fraction before ordinal: bare "phần" fractions are caught here, while
+    // bare ordinals ("thứ nhất") return None from fraction and fall through.
+    if let Some(result) = itn::vi::fraction::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::ordinal::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = itn::vi::decimal::parse(input) {
+        return Some(result);
+    }
+    if let Some(num) = itn::vi::cardinal::parse(input) {
+        return Some(num);
+    }
+    // Telephone last since it can match digit sequences.
+    if let Some(result) = itn::vi::telephone::parse(input) {
+        return Some(result);
+    }
+    None
+}
+
+/// Try partial cardinal normalization for Vietnamese.
+/// "hai mươi tuổi" → "20 tuổi" (normalize first token if it is a number ≥ 10).
+fn try_vi_partial_cardinal(input: &str) -> Option<String> {
+    let tokens: Vec<&str> = input.split_whitespace().collect();
+    if tokens.len() != 2 {
+        return None;
+    }
+
+    let first = tokens[0].to_lowercase();
+    if let Some(num) = itn::vi::cardinal::words_to_number(&first) {
+        if num >= 10 {
+            return Some(format!("{} {}", num, tokens[1]));
+        }
+    }
+
+    None
+}
+
 /// Decompose precomposed Devanagari nukta characters to base + nukta.
 /// This ensures consistent matching regardless of input encoding.
 fn decompose_devanagari_nukta(input: &str) -> String {
@@ -633,6 +732,7 @@ fn tn_normalize_for_lang(input: &str, lang: &str) -> String {
         "zh" => tn_normalize_lang_zh(input),
         "hi" => tn_normalize_lang_hi(input),
         "ja" => tn_normalize_lang_ja(input),
+        "vi" => tn_normalize_lang_vi(input),
         _ => tn_normalize(input),
     }
 }
@@ -841,6 +941,40 @@ fn tn_normalize_lang_ja(input: &str) -> String {
     input.to_string()
 }
 
+fn tn_normalize_lang_vi(input: &str) -> String {
+    if let Some(r) = tn::vi::whitelist::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::money::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::measure::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::date::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::time::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::electronic::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::telephone::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::ordinal::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::decimal::parse(input) {
+        return r;
+    }
+    if let Some(r) = tn::vi::cardinal::parse(input) {
+        return r;
+    }
+    input.to_string()
+}
+
 /// TN parse span for a specific language.
 fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
     if span.is_empty() {
@@ -904,6 +1038,9 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
         }
         "ja" => {
             try_lang_taggers!(tn::ja);
+        }
+        "vi" => {
+            try_lang_taggers!(tn::vi);
         }
         _ => {
             return tn_parse_span(span);
@@ -1097,7 +1234,7 @@ pub fn normalize_sentence_with_max_span_lang(
         // sentence in place, so the sliding window is unnecessary.
         "hi" | "ja" | "zh" => normalize_with_lang(input, lang),
         // Expression-level taggers: scan the sentence span by span.
-        "fr" | "de" | "es" => {
+        "fr" | "de" | "es" | "vi" => {
             let trimmed = input.trim();
             if trimmed.is_empty() {
                 return trimmed.to_string();
@@ -1127,6 +1264,7 @@ fn parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
         "fr" => try_fr_taggers(span),
         "de" => try_de_taggers(span),
         "es" => try_es_taggers(span),
+        "vi" => try_vi_taggers(span),
         _ => None,
     }?;
     Some((result, 70))

@@ -1,0 +1,4 @@
+# Vietnamese ITN electronic test cases (spoken → written).
+t e s t a còng g m a i l chấm c o m~test@gmail.com
+a một b hai a còng e x a m p l e chấm c o m~a1b2@example.com
+a b c a còng a b c chấm c o m~abc@abc.com

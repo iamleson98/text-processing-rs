@@ -67,6 +67,32 @@ fn test_es_sentence_single_expression() {
     );
 }
 
+// ── Vietnamese (sliding-window taggers) ──────────────────────────────
+
+#[test]
+fn test_vi_sentence_single_expression() {
+    assert_eq!(
+        normalize_sentence_lang("tôi có hai mươi mốt quả táo", "vi"),
+        "tôi có 21 quả táo"
+    );
+}
+
+#[test]
+fn test_vi_sentence_multiple_expressions() {
+    assert_eq!(
+        normalize_sentence_lang("tôi có hai mươi mốt quả táo và ba mươi quả cam", "vi"),
+        "tôi có 21 quả táo và 30 quả cam"
+    );
+}
+
+#[test]
+fn test_vi_sentence_passthrough() {
+    assert_eq!(
+        normalize_sentence_lang("xin chào thế giới", "vi"),
+        "xin chào thế giới"
+    );
+}
+
 // ── Chinese (whole-sentence scanning) ────────────────────────────────
 
 #[test]
@@ -124,7 +150,7 @@ fn test_unknown_lang_falls_back_to_english() {
 
 #[test]
 fn test_empty_and_whitespace() {
-    for lang in ["en", "fr", "de", "es", "hi", "ja", "zh"] {
+    for lang in ["en", "fr", "de", "es", "hi", "ja", "zh", "vi"] {
         assert_eq!(normalize_sentence_lang("", lang), "");
         assert_eq!(normalize_sentence_lang("   ", lang), "");
     }
