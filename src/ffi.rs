@@ -505,6 +505,7 @@ fn fst_normalize(input: &str, lang: &str) -> Option<String> {
         "es" => fst::es::normalize(input),
         "de" => fst::de::normalize(input),
         "hi" => fst::hi::normalize(input),
+        "vi" => fst::vi::normalize(input),
         _ => return None,
     })
 }

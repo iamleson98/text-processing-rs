@@ -225,6 +225,46 @@ pub fn normalize(
     post_process_punct(input, &moses_despace(&processed))
 }
 
+/// Like [`normalize`] but skips the final `post_process_punct` step.
+///
+/// NeMo's `normalize()` defaults to `punct_post_process=False`. For languages
+/// where the verbalizer emits literal punctuation (e.g. Vietnamese decimals
+/// output "ba. mười bốn" with a dot), `post_process_punct` would incorrectly
+/// remove the space after the dot to match the input "3.14". This variant
+/// matches NeMo's default behavior.
+pub fn normalize_no_punct_post(
+    classify: &VectorFst<TropicalWeight>,
+    verbalize: &VectorFst<TropicalWeight>,
+    post: Option<&VectorFst<TropicalWeight>>,
+    input: &str,
+    sep: &str,
+) -> String {
+    let Some(tagged) = apply(classify, input) else {
+        return input.to_string();
+    };
+    let tokens = TagParser::new(&tagged).fields();
+
+    let mut parts = Vec::with_capacity(tokens.len());
+    for (k, v) in tokens {
+        let single = vec![(k, v)];
+        let mut verbalized = None;
+        for candidate in permute(&single) {
+            if let Some(out) = apply(verbalize, &candidate) {
+                verbalized = Some(out);
+                break;
+            }
+        }
+        parts.push(verbalized.unwrap_or_default());
+    }
+
+    let joined = collapse_spaces(parts.join(sep));
+    let processed = match post {
+        Some(pp) => apply(pp, &joined).unwrap_or(joined),
+        None => joined,
+    };
+    moses_despace(&processed)
+}
+
 /// Collapse runs of spaces to one and trim (NeMo's `SPACE_DUP` + strip).
 fn collapse_spaces(s: String) -> String {
     let mut out = String::with_capacity(s.len());

@@ -1,0 +1,23 @@
+0~không
+1~một
+5~năm
+10~mười
+15~mười lăm
+21~hai mươi mốt
+25~hai mươi lăm
+99~chín mươi chín
+100~một trăm
+105~một trăm linh năm
+123~một trăm hai mươi ba
+999~chín trăm chín mươi chín
+1000~một nghìn
+2000~hai nghìn
+2025~hai nghìn hai mươi lăm
+1000000~một triệu
+1000000000~một tỷ
+-42~âm bốn mươi hai
+-1~âm một
+-1000~âm một nghìn
+50~năm mươi
+1975~một nghìn chín trăm bảy mươi lăm
+145~một trăm bốn mươi lăm

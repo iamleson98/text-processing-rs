@@ -1,0 +1,8 @@
+3.14~ba. mười bốn
+0.5~không. năm
+-3.14~âm ba. mười bốn
+1.0~một. không
+100.05~một trăm. không năm
+12.5~mười hai. năm
+0.26~không. hai mươi sáu
+1.5~một. năm

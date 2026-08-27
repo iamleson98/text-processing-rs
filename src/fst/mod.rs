@@ -12,7 +12,7 @@
 //! Every language reaches byte-exact parity with
 //! `Normalizer(lang=…, deterministic=True)`:
 //! zh 367/367, fr 116/116, ja 542/542, en 506/506, hi 677/677, es 536/536,
-//! de 314/314.
+//! de 314/314, vi (Vietnamese) via NeMo 1.2.0.
 //!
 //! This trades the crate's pure-Rust, tiny-bundle shape for byte-exactness and
 //! is therefore optional and off by default. Grammars are bundled gzipped
@@ -29,6 +29,7 @@ pub mod es;
 pub mod fr;
 pub mod hi;
 pub mod ja;
+pub mod vi;
 pub mod zh;
 
 use flate2::read::GzDecoder;
