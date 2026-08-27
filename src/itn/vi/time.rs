@@ -56,6 +56,8 @@ fn strip_time_modifiers(input: &str) -> (String, bool, bool) {
     let pm_markers = [" buổi chiều", " buổi tối", " chiều", " tối"];
     let am_markers = [" buổi sáng", " sáng"];
     let night_markers = [" đêm"];
+    // "trưa" (noon) is a no-op modifier — "12 giờ trưa" = "12 giờ" = 12:00.
+    let noon_markers = [" trưa"];
 
     let mut cleaned = input.to_string();
     let mut add_12 = false;
@@ -70,6 +72,15 @@ fn strip_time_modifiers(input: &str) -> (String, bool, bool) {
         }
     }
     if !is_night {
+        for marker in &noon_markers {
+            if cleaned.ends_with(marker) {
+                cleaned.truncate(cleaned.len() - marker.len());
+                // "trưa" is noon — hour 12 stays 12, no +12 offset.
+                break;
+            }
+        }
+    }
+    if !is_night {
         for marker in &pm_markers {
             if cleaned.ends_with(marker) {
                 cleaned.truncate(cleaned.len() - marker.len());
@@ -78,7 +89,7 @@ fn strip_time_modifiers(input: &str) -> (String, bool, bool) {
             }
         }
     }
-    if !add_12 {
+    if !add_12 && !is_night {
         for marker in &am_markers {
             if cleaned.ends_with(marker) {
                 cleaned.truncate(cleaned.len() - marker.len());

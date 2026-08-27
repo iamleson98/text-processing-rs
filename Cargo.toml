@@ -22,6 +22,7 @@ flate2 = { version = "1", optional = true }
 
 [dev-dependencies]
 proptest = "1"
+criterion = { version = "0.5", default-features = false }
 
 [features]
 default = []
@@ -35,3 +36,7 @@ fst-engine = ["dep:rustfst", "dep:flate2"]
 # published bundle does not need the size optimization for our use.
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
+
+[[bench]]
+name = "vi_bench"
+harness = false

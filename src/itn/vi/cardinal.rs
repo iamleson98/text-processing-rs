@@ -88,6 +88,13 @@ pub fn parse(input: &str) -> Option<String> {
         }
     }
 
+    // Validate positional variants: "mốt" only appears after "mươi" (not after
+    // "mười" or standalone), and "lăm" only appears after "mười" or "mươi".
+    // "mười mốt" (invalid → 11 is "mười một") and bare "mốt" are rejected.
+    if !validate_positional_variants(&input_lower) {
+        return None;
+    }
+
     // Split off a leading "âm " (negative).
     let (is_negative, rest) = if let Some(stripped) = input_lower.strip_prefix("âm ") {
         (true, stripped)
@@ -138,6 +145,36 @@ fn contains_marker_or_scale(input: &str) -> bool {
         "mười", "mươi", "trăm", "linh", "lẻ", "nghìn", "ngàn", "triệu", "tỷ",
     ];
     input.split_whitespace().any(|t| MARKERS.contains(&t))
+}
+
+/// Validate that positional digit variants (`mốt`, `lăm`) appear only in valid
+/// contexts:
+/// - `mốt` (variant of 1) may only follow `mươi` (e.g. "hai mươi mốt" = 21).
+///   It must NOT follow `mười` (11 is "mười một", not "mười mốt") and must NOT
+///   appear standalone or after other digit words.
+/// - `lăm` (variant of 5) may only follow `mười` or `mươi` (e.g. "mười lăm"
+///   = 15, "hai mươi lăm" = 25). It must NOT appear standalone.
+///
+/// Returns `false` if any variant is used in an invalid position.
+fn validate_positional_variants(input: &str) -> bool {
+    let tokens: Vec<&str> = input.split_whitespace().collect();
+    for (i, &token) in tokens.iter().enumerate() {
+        if token == "mốt" {
+            // Must be preceded by "mươi".
+            let prev = if i > 0 { Some(tokens[i - 1]) } else { None };
+            if prev != Some("mươi") {
+                return false;
+            }
+        }
+        if token == "lăm" {
+            // Must be preceded by "mười" or "mươi".
+            let prev = if i > 0 { Some(tokens[i - 1]) } else { None };
+            if prev != Some("mười") && prev != Some("mươi") {
+                return false;
+            }
+        }
+    }
+    true
 }
 
 /// Convert spoken Vietnamese number words to an integer.
@@ -340,6 +377,30 @@ mod tests {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse(""), None);
         assert_eq!(parse("một trăm xyz"), None);
+    }
+
+    #[test]
+    fn test_invalid_positional_variants() {
+        // "mốt" only valid after "mươi", not after "mười" or standalone.
+        assert_eq!(parse("mười mốt"), None); // 11 is "mười một"
+        assert_eq!(parse("mười mốt ba"), None);
+        // "lăm" only valid after "mười" or "mươi", not standalone or after other words.
+        assert_eq!(parse("một lăm"), None); // 15 is "mười lăm"
+        assert_eq!(parse("ba lăm"), None); // 35 is "ba mươi lăm"
+                                           // "mốt" after "mười" is invalid — "mười mốt" would be 11, but 11 is "mười một"
+        assert_eq!(parse("mười mốt"), None);
+    }
+
+    #[test]
+    fn test_valid_positional_variants() {
+        // "mốt" after "mươi" is valid (21, 31, 41...).
+        assert_eq!(parse("hai mươi mốt"), Some("21".to_string()));
+        assert_eq!(parse("ba mươi mốt"), Some("31".to_string()));
+        // "lăm" after "mười" is valid (15).
+        assert_eq!(parse("mười lăm"), Some("15".to_string()));
+        // "lăm" after "mươi" is valid (25, 35, 45...).
+        assert_eq!(parse("hai mươi lăm"), Some("25".to_string()));
+        assert_eq!(parse("ba mươi lăm"), Some("35".to_string()));
     }
 
     #[test]

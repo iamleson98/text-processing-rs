@@ -32,10 +32,12 @@ pub fn parse(input: &str) -> Option<String> {
     let (number_part, suffix) = extract_suffix(trimmed);
 
     // Vietnamese uses `.` as the decimal separator. `,` is also accepted so the
-    // tagger is tolerant of either convention.
-    let sep = if number_part.contains('.') && !is_only_thousands_dots(number_part) {
+    // tagger is tolerant of either convention. Thousands-grouped numbers
+    // ("1.000", "1,000", "1.000.000") are rejected so the cardinal tagger can
+    // handle them.
+    let sep = if number_part.contains('.') && !is_thousands_grouped(number_part) {
         '.'
-    } else if number_part.contains(',') {
+    } else if number_part.contains(',') && !is_thousands_grouped(number_part) {
         ','
     } else {
         return None;
@@ -85,20 +87,27 @@ pub fn parse(input: &str) -> Option<String> {
     Some(result)
 }
 
-/// Heuristic: a number where every `.` sits at a thousands position (e.g.
-/// "1.000.000") is not a decimal — it should be handled by the cardinal tagger.
-fn is_only_thousands_dots(s: &str) -> bool {
-    let dot_count = s.matches('.').count();
-    if dot_count == 0 {
-        return true;
+/// True if the number uses `.` or `,` as thousands separators (every group
+/// after the first is exactly 3 digits). Such numbers are cardinals, not
+/// decimals, and should be rejected so the cardinal tagger handles them.
+///
+/// Examples:
+/// - `"1.000"` → true (groups [1, 000])
+/// - `"1,000"` → true (groups [1, 000])
+/// - `"1.000.000"` → true (groups [1, 000, 000])
+/// - `"3.14"` → false (last group is 2 digits)
+/// - `"100.05"` → false (last group is 2 digits)
+/// - `"3.14159"` → false (last group is 5 digits)
+fn is_thousands_grouped(s: &str) -> bool {
+    let groups: Vec<&str> = s.split(['.', ',']).collect();
+    if groups.len() < 2 {
+        return false;
     }
-    // After the last dot there should be exactly 3 digits (thousands group).
-    if let Some(last_dot) = s.rfind('.') {
-        let after = &s[last_dot + 1..];
-        after.len() == 3 && after.chars().all(|c| c.is_ascii_digit())
-    } else {
-        true
-    }
+    // The first group can be 1-3 digits (e.g. "1" or "123").
+    // Every subsequent group must be exactly 3 digits.
+    groups[1..]
+        .iter()
+        .all(|g| g.len() == 3 && g.chars().all(|c| c.is_ascii_digit()))
 }
 
 /// Extract a quantity suffix from the end if present.
@@ -151,5 +160,19 @@ mod tests {
         assert_eq!(parse("hello"), None);
         // "1.000" is a thousands-grouped integer, not a decimal.
         assert_eq!(parse("1.000"), None);
+    }
+
+    #[test]
+    fn test_thousands_grouped_rejected() {
+        // Thousands-grouped numbers (dot or comma, 3-digit groups) are cardinals.
+        assert_eq!(parse("1.000"), None);
+        assert_eq!(parse("1,000"), None);
+        assert_eq!(parse("1.000.000"), None);
+        assert_eq!(parse("1,000,000"), None);
+        assert_eq!(parse("999.000"), None);
+        // But genuine decimals are accepted:
+        assert_eq!(parse("3.14"), Some("ba phẩy một bốn".to_string()));
+        assert_eq!(parse("3,14"), Some("ba phẩy một bốn".to_string()));
+        assert_eq!(parse("100.05"), Some("một trăm phẩy không năm".to_string()));
     }
 }

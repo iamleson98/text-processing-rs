@@ -24,6 +24,13 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Reject positional variants "mốt" and "lăm" as ordinal bodies — they are
+    // only valid after "mươi" in cardinal context, never as standalone ordinals.
+    // "thứ mốt" / "thứ lăm" are not valid Vietnamese.
+    if body == "mốt" || body == "lăm" {
+        return None;
+    }
+
     // Special small ordinals 1-4: "nhất" → 1, "hai" → 2, "ba" → 3, "tư" → 4.
     let n: i64 = match body {
         "nhất" => 1,

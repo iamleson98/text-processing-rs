@@ -36,16 +36,17 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
-    // Distinguish phone numbers from large cardinals. A pure unseparated digit
-    // string is a phone number only if it starts with "0" (Vietnamese domestic
-    // convention) or the input had a leading "+" (country code). Otherwise
-    // defer to the cardinal tagger (e.g. "1000000000" → "một tỷ").
-    let has_separator = body
+    // Distinguish phone numbers from large cardinals. Vietnamese phone
+    // numbers use spaces and hyphens as visual separators (sometimes parens),
+    // never dots or commas (those are thousands separators). A pure digit
+    // string is a phone only if it starts with "0" (domestic) or the input had
+    // a leading "+" (country code).
+    let has_phone_separator = body
         .chars()
-        .any(|c| c == ' ' || c == '.' || c == '-' || c == '(' || c == ')');
+        .any(|c| c == ' ' || c == '-' || c == '(' || c == ')');
     let has_country_code = trimmed.starts_with('+');
     let starts_with_zero = digits.starts_with('0');
-    if !has_separator && !has_country_code && !starts_with_zero {
+    if !has_phone_separator && !has_country_code && !starts_with_zero {
         return None;
     }
 

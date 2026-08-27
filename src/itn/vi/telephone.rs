@@ -2,13 +2,11 @@
 //!
 //! Converts spoken Vietnamese phone numbers to written form:
 //! - "không chín không một hai ba bốn năm sáu bảy" → "0901234567"
-//! - "không chín không, một hai ba, bốn năm sáu bảy" → "0901234567"
 //!
-//! Vietnamese phone numbers are 10-11 digits. Spoken form reads each digit
-//! individually. The tagger accepts digit words (including the positional
-//! variants "mốt", "lăm", "tư") and groups the resulting digits.
-
-use super::cardinal::words_to_number;
+//! Vietnamese phone numbers are 10-11 digits, always spelled digit-by-digit.
+//! The tagger accepts single digit words (0-9) including the positional
+//! variants "mốt" (1), "lăm" (5), "tư" (4). Compound number words like
+//! "mười" or "hai mươi" are rejected to avoid hijacking cardinal expressions.
 
 /// Parse a spoken Vietnamese telephone number to written form.
 pub fn parse(input: &str) -> Option<String> {
@@ -26,23 +24,16 @@ pub fn parse(input: &str) -> Option<String> {
         if token.is_empty() {
             continue;
         }
-        if let Some(d) = digit_word_to_char(token) {
-            digits.push(d);
-        } else {
-            // A compound like "mười" or "hai mươi" — append its decimal digits.
-            // Only accept 0-99 to avoid swallowing unrelated large numbers.
-            let num = words_to_number(token)?;
-            if !(0..=99).contains(&num) {
-                return None;
-            }
-            for c in num.to_string().chars() {
-                digits.push(c);
-            }
-        }
+        // Only accept single digit words. Compound numbers ("mười", "hai mươi")
+        // are rejected to prevent the tagger from hijacking cardinal expressions
+        // like "hai mươi mốt, ba mươi" (which is "21, 30", not a phone number).
+        let d = digit_word_to_char(token)?;
+        digits.push(d);
     }
 
-    // Need at least 7 digits for a phone number.
-    if digits.len() < 7 {
+    // Vietnamese phone numbers are 10-11 digits. Require at least 7 to allow
+    // partial numbers, but cap at 11 to reject overly long digit sequences.
+    if !(7..=11).contains(&digits.len()) {
         return None;
     }
 
@@ -79,27 +70,42 @@ mod tests {
     }
 
     #[test]
-    fn test_grouped() {
+    fn test_with_positional_variants() {
+        // "mốt" (1), "lăm" (5), "tư" (4) are accepted as digit variants.
         assert_eq!(
-            parse("không chín không một hai ba bốn năm sáu bảy"),
-            Some("0901234567".to_string())
+            parse("không một mốt hai ba bốn lăm sáu bảy tám"),
+            Some("0112345678".to_string())
+        );
+        assert_eq!(
+            parse("không tư năm sáu bảy tám chín không một hai"),
+            Some("0456789012".to_string())
         );
     }
 
     #[test]
-    fn test_with_compound() {
-        // Single-token compounds ("mười" = 10) expand to their decimal digits,
-        // so "mười" contributes "10" (two digits). Vietnamese phone numbers are
-        // normally spelled digit-by-digit; this test documents the edge case.
+    fn test_compound_numbers_rejected() {
+        // Compound number words ("mười", "hai mươi") are rejected to prevent
+        // hijacking cardinal expressions like "hai mươi mốt, ba mươi".
+        assert_eq!(parse("hai mươi mốt, ba mươi"), None);
+        assert_eq!(parse("không chín không mười hai ba bốn năm sáu bảy"), None);
+    }
+
+    #[test]
+    fn test_too_short() {
+        assert_eq!(parse("một hai ba"), None); // only 3 digits
+    }
+
+    #[test]
+    fn test_too_long() {
+        // 12 digits → rejected (Vietnamese phone numbers are max 11 digits).
         assert_eq!(
-            parse("không chín không mười hai ba bốn năm sáu bảy"),
-            Some("09010234567".to_string())
+            parse("không một hai ba bốn năm sáu bảy tám chín không một"),
+            None
         );
     }
 
     #[test]
     fn test_invalid() {
-        assert_eq!(parse("một hai ba"), None); // too short
         assert_eq!(parse("hello"), None);
         assert_eq!(parse(""), None);
     }

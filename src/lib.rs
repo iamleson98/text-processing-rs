@@ -536,6 +536,10 @@ fn try_vi_taggers(input: &str) -> Option<String> {
 
 /// Try partial cardinal normalization for Vietnamese.
 /// "hai mươi tuổi" → "20 tuổi" (normalize first token if it is a number ≥ 10).
+///
+/// Only fires when the second token is NOT a digit word — if the second token
+/// is a digit word, the phrase is likely a malformed number ("mười mốt"),
+/// not "number + non-number word", and should be left untouched.
 fn try_vi_partial_cardinal(input: &str) -> Option<String> {
     let tokens: Vec<&str> = input.split_whitespace().collect();
     if tokens.len() != 2 {
@@ -543,6 +547,14 @@ fn try_vi_partial_cardinal(input: &str) -> Option<String> {
     }
 
     let first = tokens[0].to_lowercase();
+    let second = tokens[1].to_lowercase();
+
+    // Refuse if the second token is a digit word — the phrase is likely a
+    // malformed number expression, not "number + unrelated word".
+    if is_vi_digit_word(&second) {
+        return None;
+    }
+
     if let Some(num) = itn::vi::cardinal::words_to_number(&first) {
         if num >= 10 {
             return Some(format!("{} {}", num, tokens[1]));
@@ -550,6 +562,28 @@ fn try_vi_partial_cardinal(input: &str) -> Option<String> {
     }
 
     None
+}
+
+/// True if the token is a Vietnamese digit word (0-9, including positional
+/// variants "mốt" and "lăm").
+fn is_vi_digit_word(token: &str) -> bool {
+    matches!(
+        token,
+        "không"
+            | "một"
+            | "mốt"
+            | "hai"
+            | "ba"
+            | "bốn"
+            | "tư"
+            | "năm"
+            | "lăm"
+            | "sáu"
+            | "bảy"
+            | "bẩy"
+            | "tám"
+            | "chín"
+    )
 }
 
 /// Decompose precomposed Devanagari nukta characters to base + nukta.
