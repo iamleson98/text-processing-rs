@@ -3,8 +3,6 @@
 //! Converts spoken German phone number to written form:
 //! - "null vier eins eins eins zwei drei vier eins zwei drei vier" → "(0411) 1234-1234"
 
-use super::cardinal;
-
 /// Parse spoken German telephone number to written form.
 pub fn parse(input: &str) -> Option<String> {
     let input_lower = input.to_lowercase();

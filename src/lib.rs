@@ -1351,7 +1351,7 @@ fn pretokenize(input: &str) -> Vec<Pretoken> {
         if start < end {
             let core = &chars[start..end];
             let mut run_start = 0usize;
-            let mut flush_run =
+            let flush_run =
                 |from: usize, to: usize, sep: &mut &'static str, out: &mut Vec<Pretoken>| {
                     if from < to {
                         let s = core[from].0;

@@ -34,7 +34,7 @@ fn find_decimal(input: &str) -> Option<(&str, String, &str)> {
     let chars: Vec<char> = input.chars().collect();
     let mut byte_pos = 0;
 
-    for (i, &c) in chars.iter().enumerate() {
+    for &c in chars.iter() {
         // Check for マイナス prefix
         if c == 'マ' && input[byte_pos..].starts_with("マイナス") {
             let minus_len = "マイナス".len();

@@ -10,12 +10,6 @@ use super::cardinal;
 use super::decimal;
 use super::fraction;
 
-/// Unit definition
-struct Unit {
-    spoken: &'static [&'static str],
-    symbol: &'static str,
-}
-
 const COMPOUND_UNITS: &[(&str, &str)] = &[
     ("kilometer pro stunde", "km/h"),
     ("meter pro sekunde", "m/s"),

@@ -11,32 +11,24 @@ use super::cardinal;
 struct Currency {
     names: &'static [&'static str],
     symbol: &'static str,
-    prefix: bool, // true = $X, false = X €
     cent_names: &'static [&'static str],
-    cent_singular: &'static str,
 }
 
 const CURRENCIES: &[Currency] = &[
     Currency {
         names: &["dollar", "dollars"],
         symbol: "$",
-        prefix: true,
         cent_names: &["cent", "cents"],
-        cent_singular: "cent",
     },
     Currency {
         names: &["euro", "euros"],
         symbol: "€",
-        prefix: false,
         cent_names: &["cent", "cents"],
-        cent_singular: "cent",
     },
     Currency {
         names: &["pfund"],
         symbol: "£",
-        prefix: false,
         cent_names: &["pence", "penny"],
-        cent_singular: "penny",
     },
 ];
 

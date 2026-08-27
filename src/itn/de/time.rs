@@ -344,7 +344,6 @@ fn extract_timezone(input: &str) -> (&str, Option<String>) {
         }
         if tz_start < tokens.len() && tokens.len() - tz_start >= 2 {
             let tz: String = tokens[tz_start..].join("");
-            let time_part = tokens[..tz_start].join(" ");
             // Return references won't work since we're creating new strings
             // We need to handle this differently
             let time_end = input.len()

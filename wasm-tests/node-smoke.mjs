@@ -35,6 +35,38 @@ assertEqual(
   'tnNormalizeSentence should convert spans'
 );
 
+// Vietnamese (vi) — both ITN and TN directions.
+assertEqual(
+  wasm.normalizeWithLang('hai mươi mốt', 'vi'),
+  '21',
+  'vi ITN: cardinal with mốt positional variant'
+);
+assertEqual(
+  wasm.normalizeSentenceLang('tôi có hai mươi mốt quả táo', 'vi'),
+  'tôi có 21 quả táo',
+  'vi ITN: sentence mode with embedded cardinal'
+);
+assertEqual(
+  wasm.normalizeWithLang('năm nghìn đồng', 'vi'),
+  '5000 ₫',
+  'vi ITN: money expression'
+);
+assertEqual(
+  wasm.normalizeWithLang('mười bốn giờ ba mươi', 'vi'),
+  '14:30',
+  'vi ITN: time expression'
+);
+assertEqual(
+  wasm.tnNormalizeLang('123', 'vi'),
+  'một trăm hai mươi ba',
+  'vi TN: cardinal written to spoken'
+);
+assertEqual(
+  wasm.tnNormalizeSentenceLang('Tôi có 123 quả táo', 'vi'),
+  'Tôi có một trăm hai mươi ba quả táo',
+  'vi TN: sentence mode with embedded cardinal'
+);
+
 wasm.clearRules();
 assertEqual(wasm.ruleCount(), 0, 'ruleCount starts at 0');
 wasm.addRule('gee pee tee', 'GPT');

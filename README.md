@@ -66,12 +66,23 @@ Node usage:
 ```javascript
 import * as wasm from "./pkg-node/text_processing_rs.js";
 
+// English (default)
 console.log(wasm.normalize("two hundred")); // "200"
 console.log(wasm.tnNormalize("$5.50")); // "five dollars and fifty cents"
 
+// Vietnamese — pass "vi" as the language code
+console.log(wasm.normalizeWithLang("hai mươi mốt", "vi")); // "21"
+console.log(wasm.normalizeSentenceLang("tôi có hai mươi mốt quả táo", "vi")); // "tôi có 21 quả táo"
+console.log(wasm.tnNormalizeLang("123", "vi")); // "một trăm hai mươi ba"
+console.log(wasm.tnNormalizeSentenceLang("Tôi có 123 quả táo", "vi")); // "Tôi có một trăm hai mươi ba quả táo"
+
+// Custom rules (language-agnostic, highest priority)
 wasm.addRule("gee pee tee", "GPT");
 console.log(wasm.normalize("gee pee tee")); // "GPT"
 ```
+
+Supported language codes: `"en"` (English, default), `"vi"` (Vietnamese), `"fr"` (French),
+`"de"` (German), `"es"` (Spanish), `"hi"` (Hindi), `"ja"` (Japanese), `"zh"` (Chinese).
 
 The generated npm package name is `@fluidinference/text-processing-rs`.
 
@@ -88,12 +99,15 @@ async function run() {
   // Loads and initializes the .wasm module (required once at startup)
   await init();
 
-  const itn = wasm.normalize("two hundred");
-  const tn = wasm.tnNormalize("$5.50");
+  // English
+  console.log(wasm.normalize("two hundred")); // "200"
+  console.log(wasm.tnNormalize("$5.50")); // "five dollars and fifty cents"
 
-  console.log(itn); // "200"
-  console.log(tn); // "five dollars and fifty cents"
+  // Vietnamese
+  console.log(wasm.normalizeWithLang("hai mươi mốt", "vi")); // "21"
+  console.log(wasm.tnNormalizeLang("123", "vi")); // "một trăm hai mươi ba"
 
+  // Custom rules
   wasm.addRule("gee pee tee", "GPT");
   console.log(wasm.normalize("gee pee tee")); // "GPT"
 }

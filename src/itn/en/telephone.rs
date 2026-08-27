@@ -242,7 +242,6 @@ fn parse_alphanumeric_code(input: &str) -> Option<String> {
                 result.push(' ');
             }
             letter_run.clear();
-            prev_was_number = false;
         }
 
         // Check for "X0 Y0" pattern (e.g., "forty fifty" = 4050, "ten eighty" = 1080)

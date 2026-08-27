@@ -6,7 +6,6 @@
 //! - "zum beispiel" → "z.B."
 
 use lazy_static::lazy_static;
-use std::collections::HashMap;
 
 lazy_static! {
     /// Whitelist mappings (spoken → abbreviated)

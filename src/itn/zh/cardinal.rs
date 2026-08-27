@@ -40,18 +40,6 @@ fn is_scale(c: char) -> bool {
     )
 }
 
-/// Scale value for a scale character.
-fn scale_value(c: char) -> Option<i64> {
-    match c {
-        '十' | '拾' => Some(10),
-        '百' | '佰' => Some(100),
-        '千' | '仟' => Some(1000),
-        '万' | '萬' => Some(10_000),
-        '亿' | '億' => Some(100_000_000),
-        _ => None,
-    }
-}
-
 /// Check if char is 万 or 萬.
 fn is_wan(c: char) -> bool {
     c == '万' || c == '萬'
@@ -376,7 +364,6 @@ pub fn format_zh_cardinal(input: &str) -> Option<String> {
 
         // Check if after_yi contains 万
         if let Some(wp) = after_yi.iter().position(|&c| is_wan(c)) {
-            let wan_char = after_yi[wp];
             let wan_mult_chars = &after_yi[..wp];
             let wan_mult = if wan_mult_chars.is_empty() {
                 1
