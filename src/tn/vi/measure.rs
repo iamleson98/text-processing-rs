@@ -125,7 +125,11 @@ fn strip_prefix_ci<'a>(haystack: &'a str, needle: &str) -> Option<&'a str> {
     trimmed.strip_prefix(&with_space)
 }
 
-/// Parse a numeric amount (with optional thousands separators) into Vietnamese words.
+/// Parse a numeric amount (with optional thousands separators and decimal)
+/// into Vietnamese words. Handles:
+/// - Integers: "200" → "hai trăm"
+/// - Decimals: "25.5" → "hai mươi lăm phẩy năm"
+/// - Thousands-grouped: "1.000" → "một nghìn"
 fn parse_amount(s: &str) -> Option<String> {
     let s = s.trim();
     if s.is_empty() {
@@ -137,12 +141,55 @@ fn parse_amount(s: &str) -> Option<String> {
     {
         return None;
     }
+
+    // Detect a genuine decimal point: a dot/comma that is NOT a thousands
+    // separator (i.e., the fractional part is not exactly 3 digits, or there
+    // is only one dot/comma and the total looks like a decimal).
+    if let Some(decimal_result) = parse_decimal_amount(s) {
+        return Some(decimal_result);
+    }
+
+    // Plain integer (strip thousands separators).
     let clean: String = s.chars().filter(|c| c.is_ascii_digit()).collect();
     if clean.is_empty() {
         return None;
     }
     let n: i64 = clean.parse().ok()?;
     Some(number_to_words(n))
+}
+
+/// Parse a decimal amount like "25.5" or "25,5" into "hai mươi lăm phẩy năm".
+/// Returns None if the input is not a genuine decimal (e.g. "1.000" is
+/// thousands-grouped, not a decimal).
+fn parse_decimal_amount(s: &str) -> Option<String> {
+    // Find the decimal separator (try '.' then ',').
+    // A genuine decimal has exactly one separator with 1-2 or 4+ fractional
+    // digits (3 digits = thousands grouping, handled by cardinal).
+    for sep in ['.', ','] {
+        let parts: Vec<&str> = s.splitn(2, sep).collect();
+        if parts.len() == 2 {
+            let int_part = parts[0];
+            let frac_part = parts[1];
+            // Both parts must be pure digits (after stripping spaces).
+            let int_clean: String = int_part.chars().filter(|c| c.is_ascii_digit()).collect();
+            let frac_clean: String = frac_part.chars().filter(|c| c.is_ascii_digit()).collect();
+            if int_clean.is_empty() || frac_clean.is_empty() {
+                continue;
+            }
+            // If frac_part is exactly 3 digits AND there are no other
+            // separators, this is likely a thousands group, not a decimal.
+            // But if int_part also has separators, it's thousands-grouped.
+            if frac_clean.len() == 3 && !int_part.contains(['.', ',']) {
+                continue; // Likely "1.000" = thousands, not decimal.
+            }
+            // This is a genuine decimal.
+            let int_val: i64 = int_clean.parse().ok()?;
+            let int_words = number_to_words(int_val);
+            let frac_words = super::spell_digits(&frac_clean);
+            return Some(format!("{} phẩy {}", int_words, frac_words));
+        }
+    }
+    None
 }
 
 #[cfg(test)]

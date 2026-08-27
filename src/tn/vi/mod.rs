@@ -20,9 +20,11 @@ pub mod cardinal;
 pub mod date;
 pub mod decimal;
 pub mod electronic;
+pub mod fraction;
 pub mod measure;
 pub mod money;
 pub mod ordinal;
+pub mod roman;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;
@@ -95,13 +97,13 @@ fn unsigned_to_words(n: u64) -> String {
 
     if remaining > 0 {
         // Trailing chunk: when higher-scale parts are present and the trailing
-        // chunk is in 10..=99 (zero hundreds, non-trivial tens), emit
-        // "không trăm" explicitly so the listener doesn't lose the hundreds
-        // place ("hai nghìn không trăm hai mươi lăm" for 2025 rather than the
-        // ambiguous "hai nghìn hai mươi lăm"). Single-digit trailing chunks
-        // (e.g. 1005 → "một nghìn năm") and chunks ≥ 100 (hundreds digit > 0
-        // already) do not need the linker.
-        let force_hundreds = !parts.is_empty() && (10..=99).contains(&remaining);
+        // chunk is in 1..=99 (zero hundreds), emit "không trăm" explicitly so
+        // the listener doesn't lose the hundreds place. This disambiguates:
+        // - 2025 → "hai nghìn không trăm hai mươi lăm" (not "hai nghìn hai mươi lăm")
+        // - 2002 → "hai nghìn không trăm linh hai" (not "hai nghìn hai" = 22?)
+        // - 1005 → "một nghìn không trăm linh năm" (not "một nghìn năm" = 15?)
+        // Chunks ≥ 100 (hundreds digit > 0) don't need forcing.
+        let force_hundreds = !parts.is_empty() && remaining < 100;
         parts.push(chunk_to_words(remaining as u32, force_hundreds));
     }
 
@@ -243,9 +245,11 @@ mod tests {
 
     #[test]
     fn test_large() {
+        // Trailing single-digit chunk "5" forces "không trăm linh" to disambiguate
+        // from "hai tỷ ba triệu bốn nghìn năm" which could be misheard as ...15.
         assert_eq!(
             number_to_words(2_003_004_005),
-            "hai tỷ ba triệu bốn nghìn năm"
+            "hai tỷ ba triệu bốn nghìn không trăm linh năm"
         );
     }
 

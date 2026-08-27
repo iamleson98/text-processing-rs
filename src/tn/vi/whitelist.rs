@@ -43,6 +43,16 @@ lazy_static! {
         m.insert("TT.", "thị trấn");
         m.insert("X.", "xã");
         m.insert("T.", "tỉnh");
+        // Currency codes and symbols.
+        m.insert("VNĐ", "đồng");
+        m.insert("VND", "đồng");
+        m.insert("vnd", "đồng");
+        m.insert("vnđ", "đồng");
+        // Mathematical/typographic symbols.
+        m.insert("%", "phần trăm");
+        m.insert("‰", "phần nghìn");
+        m.insert("°", "độ");
+        m.insert("§", "khoản");
         m
     };
 }

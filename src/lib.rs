@@ -979,10 +979,17 @@ fn tn_normalize_lang_vi(input: &str) -> String {
     if let Some(r) = tn::vi::whitelist::parse(input) {
         return r;
     }
+    if let Some(r) = tn::vi::roman::parse(input) {
+        return r;
+    }
     if let Some(r) = tn::vi::money::parse(input) {
         return r;
     }
     if let Some(r) = tn::vi::measure::parse(input) {
+        return r;
+    }
+    // Fraction before date: "3/4" → "ba phần tư" (fraction), not "ba tháng tư" (date).
+    if let Some(r) = tn::vi::fraction::parse(input) {
         return r;
     }
     if let Some(r) = tn::vi::date::parse(input) {
@@ -1074,6 +1081,15 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
             try_lang_taggers!(tn::ja);
         }
         "vi" => {
+            // Vietnamese-specific taggers not in the shared macro:
+            // - roman: Roman numerals (II → "hai"), before cardinal
+            // - fraction: N/M fractions (3/4 → "ba phần tư"), before date
+            if let Some(r) = tn::vi::roman::parse(span) {
+                return Some((r, 98));
+            }
+            if let Some(r) = tn::vi::fraction::parse(span) {
+                return Some((r, 89));
+            }
             try_lang_taggers!(tn::vi);
         }
         _ => {
