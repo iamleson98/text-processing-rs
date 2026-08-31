@@ -209,6 +209,12 @@ fn parse_per_period(input: &str) -> Option<String> {
 /// decimal amount — `$20.506` → "twenty point five zero six dollars".
 fn parse_dollars_cents(amount: &str, currency: &Currency) -> Option<String> {
     let (int_str, frac_str) = amount.split_once('.')?;
+    // A dot with nothing after it is sentence punctuation ("$5." at the end
+    // of a line), not a decimal point. Decline so callers keep the period
+    // (NeMo: "$5." → "five dollars.").
+    if frac_str.is_empty() {
+        return None;
+    }
     let int_clean: String = int_str.chars().filter(|c| *c != ',').collect();
 
     // More than two significant fractional digits → spoken as a decimal.
@@ -272,6 +278,9 @@ const SCALE_ABBREVS: &[(&str, &str)] = &[
 ];
 
 /// Extract a trailing scale word or single-letter magnitude abbreviation.
+///
+/// Scale words match case-insensitively ("$84.5 Billion" — capitalization is
+/// common in headings and financial documents).
 fn extract_scale(input: &str) -> (&str, Option<&str>) {
     let numeric = |s: &str| {
         !s.is_empty()
@@ -280,7 +289,7 @@ fn extract_scale(input: &str) -> (&str, Option<&str>) {
     };
 
     for &scale in SCALE_SUFFIXES {
-        if let Some(before) = input.strip_suffix(scale) {
+        if let Some(before) = strip_ascii_case_suffix(input, scale) {
             let before = before.trim_end();
             if numeric(before) {
                 return (before, Some(scale));
@@ -299,6 +308,14 @@ fn extract_scale(input: &str) -> (&str, Option<&str>) {
         }
     }
     (input, None)
+}
+
+/// Strip `suffix` from `input` regardless of ASCII case, returning the text
+/// before it. The scale words are ASCII, so ASCII case folding is exact.
+fn strip_ascii_case_suffix<'a>(input: &'a str, suffix: &str) -> Option<&'a str> {
+    let head = input.len().checked_sub(suffix.len())?;
+    let (before, tail) = input.split_at(head);
+    tail.eq_ignore_ascii_case(suffix).then_some(before)
 }
 
 #[cfg(test)]
@@ -378,11 +395,37 @@ mod tests {
     }
 
     #[test]
-    fn test_trailing_dot() {
-        // "$5." should not panic — empty cents treated as zero
-        assert_eq!(parse("$5."), Some("five dollars".to_string()));
-        assert_eq!(parse("$1."), Some("one dollar".to_string()));
-        assert_eq!(parse("$0."), Some("zero dollars".to_string()));
+    fn test_trailing_dot_is_punctuation_not_decimals() {
+        // "$5." ends a sentence — the dot is punctuation, not a decimal
+        // point. The tagger declines so callers keep the period
+        // (tn_normalize: "$5." → "five dollars.", matching NeMo).
+        assert_eq!(parse("$5."), None);
+        assert_eq!(parse("$1."), None);
+        assert_eq!(parse("$0."), None);
+        // A real trailing-dot panic guard stays: "$." is not money either.
+        assert_eq!(parse("$."), None);
+    }
+
+    #[test]
+    fn test_scale_suffix_case_insensitive() {
+        // Capitalized scale words are common in headings and financial docs.
+        assert_eq!(
+            parse("$84.5 Billion"),
+            Some("eighty four point five billion dollars".to_string())
+        );
+        assert_eq!(
+            parse("$84.5 BILLION"),
+            Some("eighty four point five billion dollars".to_string())
+        );
+        assert_eq!(
+            parse("$50 Million"),
+            Some("fifty million dollars".to_string())
+        );
+        assert_eq!(
+            parse("₩460 Billion"),
+            Some("four hundred sixty billion won".to_string())
+        );
+        assert_eq!(parse("¥30B"), Some("thirty billion yen".to_string()));
     }
 
     #[test]

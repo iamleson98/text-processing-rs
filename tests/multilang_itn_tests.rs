@@ -194,11 +194,14 @@ fn test_empty_and_whitespace() {
 }
 
 #[test]
-fn test_max_span_zero_uses_single_token_spans() {
-    // max_span_tokens == 0 clamps to 1 in the sliding window, so multi-token
-    // French cardinals ("vingt et un") no longer coalesce.
+fn test_max_span_zero_uses_library_default() {
+    // max_span_tokens == 0 selects the library default window (16), matching
+    // the documented FFI/WASM/Swift convention. Multi-token spans coalesce
+    // normally: French cardinals ("vingt et un") and English money+scale
+    // ("$84.5 billion") are read as a whole instead of degrading to
+    // one-token spans ("vingt" / "eighty four dollars fifty cents").
     let out = normalize_sentence_with_max_span_lang("j'ai vingt et un ans", "fr", 0);
-    assert_ne!(out, "j'ai 21 ans");
+    assert_eq!(out, "j'ai 21 ans");
     // Scanning languages ignore max_span entirely.
     assert_eq!(
         normalize_sentence_with_max_span_lang("我有二十一个苹果", "zh", 0),

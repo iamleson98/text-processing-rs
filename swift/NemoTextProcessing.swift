@@ -192,7 +192,8 @@ public enum NemoTextProcessing {
     ///
     /// - Parameters:
     ///   - input: Sentence containing written-form spans
-    ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span (default 16)
+    ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span.
+    ///     Pass `0` to use the library default (16).
     /// - Returns: Sentence with written-form spans replaced with spoken form
     public static func tnNormalizeSentence(_ input: String, maxSpanTokens: UInt32) -> String {
         guard let cString = input.cString(using: .utf8) else {

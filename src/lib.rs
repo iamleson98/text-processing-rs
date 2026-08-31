@@ -1449,12 +1449,19 @@ fn pretokenize(input: &str) -> Vec<Pretoken> {
 /// Shared sliding-window match loop used by the three sentence-mode entry
 /// points. `parser` returns `Some((replacement, score))` if the joined span
 /// can be normalized.
+///
+/// `max_span_tokens == 0` means "library default" ([`DEFAULT_MAX_SPAN_TOKENS`]),
+/// matching the `0`-means-default convention documented on the FFI/WASM/Swift
+/// entry points. Treating `0` as a one-token window silently degrades
+/// normalization: multi-token semiotic spans such as `$84.5 billion` stop
+/// matching and the money tagger reads only `$84.5`
+/// ("eighty four dollars fifty cents") while `billion` dangles loose.
 fn sentence_loop<F>(pretokens: &[Pretoken], max_span_tokens: usize, parser: F) -> String
 where
     F: Fn(&str) -> Option<(String, u8)>,
 {
     let max_span = if max_span_tokens == 0 {
-        1
+        DEFAULT_MAX_SPAN_TOKENS
     } else {
         max_span_tokens
     };
@@ -1564,66 +1571,102 @@ fn normalize_sentence_inner(
 
 // ── Text Normalization (written → spoken) ─────────────────────────────
 
+/// Sentence-final punctuation stripped by the single-expression TN fallback.
+const TN_TRAILING_PUNCT: [char; 7] = ['!', '?', '.', ',', ';', ':', '…'];
+
 /// Normalize written-form text to spoken form (Text Normalization).
 ///
 /// Tries TN taggers in priority order (most specific first).
 /// Returns original text if no tagger matches.
+///
+/// Whole-input matches that fail only because of trailing sentence
+/// punctuation ("$84.5 billion.") are retried on the stripped core and the
+/// punctuation re-attached, mirroring NeMo's whole-input semantics
+/// ("eighty four point five billion dollars.").
 ///
 /// ```
 /// use text_processing_rs::tn_normalize;
 ///
 /// let result = tn_normalize("$5.50");
 /// assert_eq!(result, "five dollars fifty cents");
+/// assert_eq!(tn_normalize("$84.5 billion."), "eighty four point five billion dollars.");
 /// ```
 pub fn tn_normalize(input: &str) -> String {
     let input = input.trim();
 
-    if let Some(result) = tn::en::whitelist::parse(input) {
+    if let Some(result) = tn_parse_single(input) {
         return result;
+    }
+
+    // Trailing-punctuation fallback. A final period/comma commonly follows a
+    // money amount in PDF lines and captions ("$84.5 billion.") and blocks the
+    // scale-suffix match, leaving the whole expression unnormalized. NeMo's
+    // whole-input pipeline normalizes the semiotic core and keeps the
+    // punctuation, so do the same: strip the trailing punctuation run, retry
+    // the tagger chain on the core, and glue the punctuation back. Cores no
+    // tagger can read ("hello world.") pass through untouched, which also
+    // keeps "Dr."/"e.g." whitelist behavior intact (they match whole-input on
+    // the first pass anyway).
+    let core = input.trim_end_matches(TN_TRAILING_PUNCT);
+    if !core.is_empty() && core.len() < input.len() {
+        if let Some(result) = tn_parse_single(core) {
+            return format!("{}{}", result, &input[core.len()..]);
+        }
+    }
+
+    input.to_string()
+}
+
+/// The English single-expression TN tagger chain, in [`tn_normalize`]'s
+/// dispatch order. Shared with the trailing-punctuation fallback so a stripped
+/// core sees exactly the same taggers as a whole input.
+fn tn_parse_single(input: &str) -> Option<String> {
+    if let Some(result) = tn::en::whitelist::parse(input) {
+        return Some(result);
     }
     if let Some(result) = tn::en::math::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::roman::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::money::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::measure::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::date::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::time::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::fraction::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::electronic::parse(input) {
-        return result;
+        return Some(result);
     }
     // Range before telephone: a typed range ("1980-1986") must not be read as
     // a phone-style digit group. Phone numbers fall through (range returns None).
     if let Some(result) = tn::en::range::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::telephone::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::ordinal::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::decimal::parse(input) {
-        return result;
+        return Some(result);
     }
     if let Some(result) = tn::en::cardinal::parse(input) {
-        return result;
+        return Some(result);
     }
 
-    input.to_string()
+    None
 }
 
 /// Try to parse a span of text using TN taggers.
@@ -1755,6 +1798,11 @@ pub fn tn_normalize_sentence_with_max_span_lang(
 }
 
 /// Normalize a full sentence (TN) with a configurable max span size.
+///
+/// `max_span_tokens == 0` selects the library default
+/// ([`DEFAULT_MAX_SPAN_TOKENS`]), mirroring the FFI/WASM/Swift convention —
+/// `tnNormalizeSentenceWithMaxSpanLang(text, "en", 0)` must not degrade to a
+/// one-token window.
 pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -1896,6 +1944,59 @@ mod tests {
             tn_normalize_sentence("I paid $5 for 23 items"),
             "I paid five dollars for twenty three items"
         );
+    }
+
+    #[test]
+    fn test_tn_sentence_max_span_zero_selects_default() {
+        // Regression: `max_span_tokens == 0` used to collapse the sliding
+        // window to ONE token, so the money tagger only ever saw "$84.5"
+        // ("eighty four dollars fifty cents") and the scale word dangled:
+        // "$84.5 billion." → "eighty four dollars fifty cents billion."
+        // Zero must select the library default (16), the documented
+        // FFI/WASM/Swift convention
+        // (`tnNormalizeSentenceWithMaxSpanLang(text, "en", 0)`).
+        assert_eq!(
+            tn_normalize_sentence_with_max_span("$84.5 billion.", 0),
+            "eighty four point five billion dollars."
+        );
+        assert_eq!(
+            tn_normalize_sentence_with_max_span_lang("$84.5 billion.", "en", 0),
+            "eighty four point five billion dollars."
+        );
+        assert_eq!(
+            tn_normalize_sentence_with_max_span_lang("The fund manages $84.5 billion.", "en", 0),
+            "The fund manages eighty four point five billion dollars."
+        );
+        // An explicit one-token window still applies when truly requested.
+        assert_eq!(
+            tn_normalize_sentence_with_max_span("$84.5 billion.", 1),
+            "eighty four dollars fifty cents billion."
+        );
+    }
+
+    #[test]
+    fn test_tn_trailing_punctuation_fallback() {
+        // Single-expression TN keeps sentence punctuation, like NeMo's
+        // whole-input pipeline and the sentence-mode loop.
+        assert_eq!(
+            tn_normalize("$84.5 billion."),
+            "eighty four point five billion dollars."
+        );
+        assert_eq!(
+            tn_normalize("$2.5 billion."),
+            "two point five billion dollars."
+        );
+        assert_eq!(tn_normalize("$5."), "five dollars.");
+        assert_eq!(tn_normalize("123."), "one hundred and twenty three.");
+        assert_eq!(tn_normalize("1,000."), "one thousand.");
+        assert_eq!(tn_normalize("3.5."), "three point five.");
+        // Untouched when no tagger can read the core.
+        assert_eq!(tn_normalize("hello world."), "hello world.");
+        assert_eq!(tn_normalize("..."), "...");
+        assert_eq!(tn_normalize("."), ".");
+        // Whitelist matches whole-input on the first pass; unchanged.
+        assert_eq!(tn_normalize("Dr."), "doctor");
+        assert_eq!(tn_normalize("e.g."), "for example");
     }
 
     #[test]

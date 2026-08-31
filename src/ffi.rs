@@ -337,6 +337,9 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence(input: *const c_char) -> *mu
 
 /// Normalize a full sentence (TN) with a configurable max span size.
 ///
+/// `max_span_tokens`: `0` means "use library default" (16); any positive
+/// value is a caller-specified max span.
+///
 /// # Safety
 /// - `input` must be a valid null-terminated UTF-8 string
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
@@ -430,6 +433,9 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang(
 }
 
 /// Normalize a full sentence (TN) for a specific language with configurable max span.
+///
+/// `max_span_tokens`: `0` means "use library default" (16); any positive
+/// value is a caller-specified max span.
 ///
 /// # Safety
 /// - `input` and `lang` must be valid null-terminated UTF-8 strings

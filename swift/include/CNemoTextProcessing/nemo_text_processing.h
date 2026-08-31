@@ -136,7 +136,8 @@ char* nemo_tn_normalize_sentence(const char* input);
  * Text Normalization: normalize a full sentence with configurable max span size.
  *
  * @param input Null-terminated UTF-8 string
- * @param max_span_tokens Maximum number of consecutive tokens per span (default 16)
+ * @param max_span_tokens Maximum number of consecutive tokens per span.
+ *                        Pass 0 to use the library default (16).
  * @return Newly allocated string, must be freed with nemo_free_string().
  */
 char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
@@ -169,7 +170,8 @@ char* nemo_tn_normalize_sentence_lang(const char* input, const char* lang);
  *
  * @param input Null-terminated UTF-8 string
  * @param lang Null-terminated language code (e.g. "fr", "de")
- * @param max_span_tokens Maximum number of consecutive tokens per span (default 16)
+ * @param max_span_tokens Maximum number of consecutive tokens per span.
+ *                        Pass 0 to use the library default (16).
  * @return Newly allocated string, must be freed with nemo_free_string().
  */
 char* nemo_tn_normalize_sentence_with_max_span_lang(const char* input, const char* lang, uint32_t max_span_tokens);
