@@ -5,7 +5,10 @@
 mod common;
 
 use std::path::Path;
-use text_processing_rs::{tn_normalize, tn_normalize_sentence};
+use text_processing_rs::{
+    tn_normalize, tn_normalize_sentence, tn_normalize_sentence_with_max_span,
+    tn_normalize_sentence_with_max_span_lang,
+};
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {
@@ -327,5 +330,53 @@ fn test_tn_range() {
         results.failures.is_empty(),
         "{} range TN tests failed",
         results.failures.len()
+    );
+}
+
+/// Regression test for the exact user-reported case: PDF text "$84.5 billion"
+/// (no trailing sentence punctuation) fed through the WASM entry point
+/// `tnNormalizeSentenceWithMaxSpanLang(text, "en", 0)`.
+///
+/// Before the fix, `max_span_tokens == 0` collapsed the sliding window to a
+/// single token, so the money tagger only ever saw "$84.5" ("eighty four
+/// dollars fifty cents") and "billion" was normalized separately and left
+/// dangling: "eighty four dollars fifty cents billion". Zero must select the
+/// library default window so the whole multi-token money span matches.
+#[test]
+fn test_tn_sentence_money_scale_no_punctuation_max_span_zero() {
+    // Exact user input and exact WASM binding path (max_span = 0).
+    assert_eq!(
+        tn_normalize_sentence_with_max_span_lang("$84.5 billion", "en", 0),
+        "eighty four point five billion dollars"
+    );
+
+    // Same input with surrounding whitespace (PDF extraction artifacts).
+    assert_eq!(
+        tn_normalize_sentence_with_max_span_lang("  $84.5 billion ", "en", 0),
+        "eighty four point five billion dollars"
+    );
+
+    // Plain Rust entry point agrees (wasm.rs forwards max_span verbatim).
+    assert_eq!(
+        tn_normalize_sentence_with_max_span("$84.5 billion", 0),
+        "eighty four point five billion dollars"
+    );
+
+    // Embedded in a longer PDF-style sentence, no trailing period.
+    assert_eq!(
+        tn_normalize_sentence_with_max_span_lang(
+            "Revenue rose to $84.5 billion in 2024",
+            "en",
+            0
+        ),
+        "Revenue rose to eighty four point five billion dollars in twenty twenty four"
+    );
+
+    // A truly explicit one-token window remains caller-controlled: this
+    // documents the (degraded) behavior of max_span = 1 rather than the
+    // recommended usage.
+    assert_eq!(
+        tn_normalize_sentence_with_max_span("$84.5 billion", 1),
+        "eighty four dollars fifty cents billion"
     );
 }
