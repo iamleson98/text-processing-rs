@@ -1852,6 +1852,17 @@ mod tests {
     }
 
     #[test]
+    fn test_tn_sentence_unicode_dash_span_does_not_panic() {
+        assert_eq!(
+            tn_normalize_sentence_with_max_span(
+                "$400 in one fell swoop. Amazon.com shot up 19% that day and—despite",
+                0,
+            ),
+            "four hundred dollars in one fell swoop. amazon dot com shot up nineteen percent that day and—despite"
+        );
+    }
+
+    #[test]
     fn test_sentence_passthrough() {
         assert_eq!(normalize_sentence("hello world"), "hello world");
         assert_eq!(

@@ -314,7 +314,8 @@ fn extract_scale(input: &str) -> (&str, Option<&str>) {
 /// before it. The scale words are ASCII, so ASCII case folding is exact.
 fn strip_ascii_case_suffix<'a>(input: &'a str, suffix: &str) -> Option<&'a str> {
     let head = input.len().checked_sub(suffix.len())?;
-    let (before, tail) = input.split_at(head);
+    let before = input.get(..head)?;
+    let tail = input.get(head..)?;
     tail.eq_ignore_ascii_case(suffix).then_some(before)
 }
 

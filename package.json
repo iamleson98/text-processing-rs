@@ -18,5 +18,8 @@
     "wasm:ci": "npm run wasm:build:node && npm run wasm:test:node && npm run wasm:build:web",
     "wasm:pack": "npm pack ./pkg-web",
     "wasm:publish": "npm publish ./pkg-web --access public"
+  },
+  "dependencies": {
+    "wasm-pack": "^0.15.0"
   }
 }

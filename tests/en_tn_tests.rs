@@ -364,11 +364,7 @@ fn test_tn_sentence_money_scale_no_punctuation_max_span_zero() {
 
     // Embedded in a longer PDF-style sentence, no trailing period.
     assert_eq!(
-        tn_normalize_sentence_with_max_span_lang(
-            "Revenue rose to $84.5 billion in 2024",
-            "en",
-            0
-        ),
+        tn_normalize_sentence_with_max_span_lang("Revenue rose to $84.5 billion in 2024", "en", 0),
         "Revenue rose to eighty four point five billion dollars in twenty twenty four"
     );
 
